@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">Q FieldKit</string>
+    <string name="inventory_title">Inventory</string>
+    <string name="add_item">Add Item</string>
+    <string name="add_item_title">Add Inventory Item</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="empty_inventory_title">No inventory items</string>
+    <string name="empty_inventory_subtitle">Tap + to add your first part or product</string>
+    <string name="item_name_label">Item Name *</string>
+    <string name="sku_label">SKU / Code *</string>
+    <string name="category_label">Category</string>
+    <string name="quantity_label">In Stock Quantity *</string>
+    <string name="minimum_stock_label">Minimum Alert Stock *</string>
+    <string name="purchase_price_label">Purchase Price ($) *</string>
+    <string name="selling_price_label">Selling Price ($) *</string>
+    <string name="low_stock_badge">Low Stock</string>
+    <string name="in_stock_label">In Stock: %1$d</string>
+    <string name="min_stock_label">Min: %1$d</string>
+    <string name="selling_price_format">Sell: $%.2f</string>
+    <string name="cost_price_format">Cost: $%.2f</string>
 </resources>
