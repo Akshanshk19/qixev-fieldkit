@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,14 +22,20 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -38,13 +45,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -56,9 +63,15 @@ import com.qixev.qfieldkit.data.local.entity.InventoryItemEntity
 @Composable
 fun InventoryScreen(
     uiState: InventoryUiState,
+    onSearchQueryChanged: (String) -> Unit,
+    onCategorySelected: (String?) -> Unit,
     onOpenAddDialog: () -> Unit,
-    onDismissAddDialog: () -> Unit,
-    onAddItem: (
+    onOpenEditDialog: (InventoryItemEntity) -> Unit,
+    onDismissFormDialog: () -> Unit,
+    onRequestDelete: (InventoryItemEntity) -> Unit,
+    onDismissDeleteDialog: () -> Unit,
+    onConfirmDelete: () -> Unit,
+    onSaveItem: (
         name: String,
         sku: String,
         category: String,
@@ -66,7 +79,7 @@ fun InventoryScreen(
         minimumStockStr: String,
         purchasePriceStr: String,
         sellingPriceStr: String
-    ) -> Boolean,
+    ) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -98,43 +111,130 @@ fun InventoryScreen(
             }
         }
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when {
-                uiState.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
+            // Search Bar
+            OutlinedTextField(
+                value = uiState.searchQuery,
+                onValueChange = onSearchQueryChanged,
+                placeholder = { Text(stringResource(R.string.search_placeholder)) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null
                     )
+                },
+                trailingIcon = {
+                    if (uiState.searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { onSearchQueryChanged("") }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null
+                            )
+                        }
+                    }
+                },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+
+            // Category Filter Chips
+            if (uiState.availableCategories.isNotEmpty()) {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                ) {
+                    item {
+                        FilterChip(
+                            selected = uiState.selectedCategory == null,
+                            onClick = { onCategorySelected(null) },
+                            label = { Text(stringResource(R.string.all_categories)) }
+                        )
+                    }
+                    items(uiState.availableCategories) { category ->
+                        FilterChip(
+                            selected = uiState.selectedCategory == category,
+                            onClick = {
+                                if (uiState.selectedCategory == category) {
+                                    onCategorySelected(null)
+                                } else {
+                                    onCategorySelected(category)
+                                }
+                            },
+                            label = { Text(category) }
+                        )
+                    }
                 }
-                uiState.items.isEmpty() -> {
-                    EmptyInventoryView(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                else -> {
-                    InventoryList(
-                        items = uiState.items,
-                        modifier = Modifier.fillMaxSize()
-                    )
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                when {
+                    uiState.isLoading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                    uiState.items.isEmpty() -> {
+                        EmptyInventoryView(
+                            title = stringResource(R.string.empty_inventory_title),
+                            subtitle = stringResource(R.string.empty_inventory_subtitle),
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                    uiState.filteredItems.isEmpty() -> {
+                        EmptyInventoryView(
+                            title = stringResource(R.string.no_search_results_title),
+                            subtitle = stringResource(R.string.no_search_results_subtitle),
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                    else -> {
+                        InventoryList(
+                            items = uiState.filteredItems,
+                            onEdit = onOpenEditDialog,
+                            onDelete = onRequestDelete,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
             }
         }
     }
 
-    if (uiState.isAddDialogOpen) {
-        AddItemDialog(
+    if (uiState.isFormDialogOpen) {
+        ItemFormDialog(
+            editingItem = uiState.editingItem,
             validationErrors = uiState.validationErrors,
-            onDismiss = onDismissAddDialog,
-            onConfirm = onAddItem
+            onDismiss = onDismissFormDialog,
+            onConfirm = onSaveItem
+        )
+    }
+
+    uiState.itemPendingDelete?.let { item ->
+        DeleteItemDialog(
+            item = item,
+            onDismiss = onDismissDeleteDialog,
+            onConfirm = onConfirmDelete
         )
     }
 }
 
 @Composable
 private fun EmptyInventoryView(
+    title: String,
+    subtitle: String,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -143,14 +243,14 @@ private fun EmptyInventoryView(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = stringResource(R.string.empty_inventory_title),
+            text = title,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = stringResource(R.string.empty_inventory_subtitle),
+            text = subtitle,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -160,6 +260,8 @@ private fun EmptyInventoryView(
 @Composable
 private fun InventoryList(
     items: List<InventoryItemEntity>,
+    onEdit: (InventoryItemEntity) -> Unit,
+    onDelete: (InventoryItemEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -171,7 +273,11 @@ private fun InventoryList(
             items = items,
             key = { it.id }
         ) { item ->
-            InventoryItemCard(item = item)
+            InventoryItemCard(
+                item = item,
+                onEdit = { onEdit(item) },
+                onDelete = { onDelete(item) }
+            )
         }
     }
 }
@@ -179,6 +285,8 @@ private fun InventoryList(
 @Composable
 private fun InventoryItemCard(
     item: InventoryItemEntity,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isLowStock = item.quantity <= item.minimumStock
@@ -255,6 +363,40 @@ private fun InventoryItemCard(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = onEdit) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.edit),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(R.string.edit))
+                }
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                TextButton(
+                    onClick = onDelete,
+                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.delete),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(R.string.delete))
+                }
+            }
         }
     }
 }
@@ -287,7 +429,8 @@ private fun LowStockBadge() {
 }
 
 @Composable
-private fun AddItemDialog(
+private fun ItemFormDialog(
+    editingItem: InventoryItemEntity?,
     validationErrors: InventoryFormValidationErrors,
     onDismiss: () -> Unit,
     onConfirm: (
@@ -298,21 +441,28 @@ private fun AddItemDialog(
         minimumStockStr: String,
         purchasePriceStr: String,
         sellingPriceStr: String
-    ) -> Boolean
+    ) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var sku by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("") }
-    var quantityStr by remember { mutableStateOf("") }
-    var minimumStockStr by remember { mutableStateOf("") }
-    var purchasePriceStr by remember { mutableStateOf("") }
-    var sellingPriceStr by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf(editingItem?.name ?: "") }
+    var sku by rememberSaveable { mutableStateOf(editingItem?.sku ?: "") }
+    var category by rememberSaveable { mutableStateOf(editingItem?.category ?: "") }
+    var quantityStr by rememberSaveable { mutableStateOf(editingItem?.quantity?.toString() ?: "") }
+    var minimumStockStr by rememberSaveable { mutableStateOf(editingItem?.minimumStock?.toString() ?: "") }
+    var purchasePriceStr by rememberSaveable { mutableStateOf(editingItem?.purchasePrice?.toString() ?: "") }
+    var sellingPriceStr by rememberSaveable { mutableStateOf(editingItem?.sellingPrice?.toString() ?: "") }
+
+    val isEditing = editingItem != null
+    val dialogTitle = if (isEditing) {
+        stringResource(R.string.edit_item_title)
+    } else {
+        stringResource(R.string.add_item_title)
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = stringResource(R.string.add_item_title),
+                text = dialogTitle,
                 style = MaterialTheme.typography.titleLarge
             )
         },
@@ -431,3 +581,44 @@ private fun AddItemDialog(
     )
 }
 
+@Composable
+private fun DeleteItemDialog(
+    item: InventoryItemEntity,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.delete_item_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(
+                    R.string.delete_item_confirmation,
+                    item.name,
+                    item.sku
+                ),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text(stringResource(R.string.delete))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}

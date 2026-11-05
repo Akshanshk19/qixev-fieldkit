@@ -18,7 +18,10 @@ interface InventoryItemDao {
     @Query("SELECT * FROM inventory_items WHERE id = :id LIMIT 1")
     suspend fun getInventoryItemById(id: Long): InventoryItemEntity?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Query("SELECT * FROM inventory_items WHERE sku = :sku LIMIT 1")
+    suspend fun getInventoryItemBySku(sku: String): InventoryItemEntity?
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertItem(item: InventoryItemEntity): Long
 
     @Update
@@ -27,4 +30,3 @@ interface InventoryItemDao {
     @Delete
     suspend fun deleteItem(item: InventoryItemEntity)
 }
-

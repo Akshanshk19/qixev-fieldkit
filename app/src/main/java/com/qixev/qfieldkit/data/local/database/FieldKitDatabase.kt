@@ -9,7 +9,7 @@ import com.qixev.qfieldkit.data.local.entity.InventoryItemEntity
 
 @Database(
     entities = [InventoryItemEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class FieldKitDatabase : RoomDatabase() {
@@ -28,9 +28,10 @@ abstract class FieldKitDatabase : RoomDatabase() {
                     context.applicationContext,
                     FieldKitDatabase::class.java,
                     DATABASE_NAME
-                ).build().also { INSTANCE = it }
+                )
+                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .build().also { INSTANCE = it }
             }
         }
     }
 }
-

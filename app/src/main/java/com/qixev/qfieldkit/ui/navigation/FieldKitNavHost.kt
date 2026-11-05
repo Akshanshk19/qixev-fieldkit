@@ -25,11 +25,16 @@ fun FieldKitNavHost(
             val uiState by inventoryViewModel.uiState.collectAsStateWithLifecycle()
             InventoryScreen(
                 uiState = uiState,
+                onSearchQueryChanged = inventoryViewModel::onSearchQueryChanged,
+                onCategorySelected = inventoryViewModel::onCategorySelected,
                 onOpenAddDialog = inventoryViewModel::onOpenAddDialog,
-                onDismissAddDialog = inventoryViewModel::onDismissAddDialog,
-                onAddItem = inventoryViewModel::addItem
+                onOpenEditDialog = inventoryViewModel::onOpenEditDialog,
+                onDismissFormDialog = inventoryViewModel::onDismissFormDialog,
+                onRequestDelete = inventoryViewModel::onRequestDelete,
+                onDismissDeleteDialog = inventoryViewModel::onDismissDeleteDialog,
+                onConfirmDelete = inventoryViewModel::onConfirmDelete,
+                onSaveItem = inventoryViewModel::saveItem
             )
         }
     }
 }
-

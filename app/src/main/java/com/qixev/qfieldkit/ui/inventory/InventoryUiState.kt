@@ -21,9 +21,14 @@ data class InventoryFormValidationErrors(
 
 data class InventoryUiState(
     val items: List<InventoryItemEntity> = emptyList(),
+    val filteredItems: List<InventoryItemEntity> = emptyList(),
+    val availableCategories: List<String> = emptyList(),
+    val searchQuery: String = "",
+    val selectedCategory: String? = null,
     val isLoading: Boolean = true,
-    val isAddDialogOpen: Boolean = false,
+    val isFormDialogOpen: Boolean = false,
+    val editingItem: InventoryItemEntity? = null,
+    val itemPendingDelete: InventoryItemEntity? = null,
     val validationErrors: InventoryFormValidationErrors = InventoryFormValidationErrors(),
     val userMessage: String? = null
 )
-

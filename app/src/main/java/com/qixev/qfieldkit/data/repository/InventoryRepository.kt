@@ -15,6 +15,10 @@ class InventoryRepository(
         return inventoryItemDao.getInventoryItemById(id)
     }
 
+    suspend fun getInventoryItemBySku(sku: String): InventoryItemEntity? {
+        return inventoryItemDao.getInventoryItemBySku(sku)
+    }
+
     suspend fun addItem(item: InventoryItemEntity): Long {
         return inventoryItemDao.insertItem(item)
     }
@@ -27,4 +31,3 @@ class InventoryRepository(
         inventoryItemDao.deleteItem(item)
     }
 }
-

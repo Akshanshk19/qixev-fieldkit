@@ -10,27 +10,53 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class InventoryViewModel(
     private val repository: InventoryRepository
 ) : ViewModel() {
 
-    private val _isAddDialogOpen = MutableStateFlow(false)
+    private val _searchQuery = MutableStateFlow("")
+    private val _selectedCategory = MutableStateFlow<String?>(null)
+    private val _isFormDialogOpen = MutableStateFlow(false)
+    private val _editingItem = MutableStateFlow<InventoryItemEntity?>(null)
+    private val _itemPendingDelete = MutableStateFlow<InventoryItemEntity?>(null)
     private val _validationErrors = MutableStateFlow(InventoryFormValidationErrors())
     private val _userMessage = MutableStateFlow<String?>(null)
 
     val uiState: StateFlow<InventoryUiState> = combine(
         repository.getInventoryItems(),
-        _isAddDialogOpen,
+        _searchQuery,
+        _selectedCategory,
+        _isFormDialogOpen,
+        _editingItem,
+        _itemPendingDelete,
         _validationErrors,
         _userMessage
-    ) { items, isAddDialogOpen, validationErrors, userMessage ->
+    ) { args: Array<Any?> ->
+        @Suppress("UNCHECKED_CAST")
+        val items = args[0] as List<InventoryItemEntity>
+        val searchQuery = args[1] as String
+        val selectedCategory = args[2] as String?
+        val isFormDialogOpen = args[3] as Boolean
+        val editingItem = args[4] as InventoryItemEntity?
+        val itemPendingDelete = args[5] as InventoryItemEntity?
+        val validationErrors = args[6] as InventoryFormValidationErrors
+        val userMessage = args[7] as String?
+
+        val availableCategories = InventoryItemFilter.extractCategories(items)
+        val filtered = InventoryItemFilter.filter(items, searchQuery, selectedCategory)
+
         InventoryUiState(
             items = items,
+            filteredItems = filtered,
+            availableCategories = availableCategories,
+            searchQuery = searchQuery,
+            selectedCategory = selectedCategory,
             isLoading = false,
-            isAddDialogOpen = isAddDialogOpen,
+            isFormDialogOpen = isFormDialogOpen,
+            editingItem = editingItem,
+            itemPendingDelete = itemPendingDelete,
             validationErrors = validationErrors,
             userMessage = userMessage
         )
@@ -40,21 +66,57 @@ class InventoryViewModel(
         initialValue = InventoryUiState(isLoading = true)
     )
 
-    fun onOpenAddDialog() {
-        _validationErrors.value = InventoryFormValidationErrors()
-        _isAddDialogOpen.value = true
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
     }
 
-    fun onDismissAddDialog() {
+    fun onCategorySelected(category: String?) {
+        _selectedCategory.value = category
+    }
+
+    fun onOpenAddDialog() {
+        _editingItem.value = null
         _validationErrors.value = InventoryFormValidationErrors()
-        _isAddDialogOpen.value = false
+        _isFormDialogOpen.value = true
+    }
+
+    fun onOpenEditDialog(item: InventoryItemEntity) {
+        _editingItem.value = item
+        _validationErrors.value = InventoryFormValidationErrors()
+        _isFormDialogOpen.value = true
+    }
+
+    fun onDismissFormDialog() {
+        _editingItem.value = null
+        _validationErrors.value = InventoryFormValidationErrors()
+        _isFormDialogOpen.value = false
+    }
+
+    fun onRequestDelete(item: InventoryItemEntity) {
+        _itemPendingDelete.value = item
+    }
+
+    fun onDismissDeleteDialog() {
+        _itemPendingDelete.value = null
+    }
+
+    fun onConfirmDelete() {
+        val item = _itemPendingDelete.value ?: return
+        viewModelScope.launch {
+            try {
+                repository.deleteItem(item)
+                _itemPendingDelete.value = null
+            } catch (e: Exception) {
+                _userMessage.value = e.localizedMessage
+            }
+        }
     }
 
     fun onClearUserMessage() {
         _userMessage.value = null
     }
 
-    fun addItem(
+    fun saveItem(
         name: String,
         sku: String,
         category: String,
@@ -62,7 +124,7 @@ class InventoryViewModel(
         minimumStockStr: String,
         purchasePriceStr: String,
         sellingPriceStr: String
-    ): Boolean {
+    ) {
         val validation = InventoryValidator.validate(
             name = name,
             sku = sku,
@@ -74,24 +136,57 @@ class InventoryViewModel(
 
         if (!validation.isValid) {
             _validationErrors.value = validation.errors
-            return false
+            return
         }
 
+        val trimmedSku = sku.trim()
+        val currentEditing = _editingItem.value
+
         viewModelScope.launch {
-            val item = InventoryItemEntity(
-                name = name.trim(),
-                sku = sku.trim(),
-                category = category.trim().ifBlank { "General" },
-                quantity = validation.parsedQuantity ?: 0,
-                minimumStock = validation.parsedMinimumStock ?: 0,
-                purchasePrice = validation.parsedPurchasePrice ?: 0.0,
-                sellingPrice = validation.parsedSellingPrice ?: 0.0
-            )
-            repository.addItem(item)
-            _isAddDialogOpen.value = false
-            _validationErrors.value = InventoryFormValidationErrors()
+            // Check for duplicate SKU
+            val existingItem = repository.getInventoryItemBySku(trimmedSku)
+            if (existingItem != null && existingItem.id != currentEditing?.id) {
+                _validationErrors.value = validation.errors.copy(
+                    skuError = "SKU already exists. Each item must have a unique SKU."
+                )
+                return@launch
+            }
+
+            try {
+                if (currentEditing != null) {
+                    val updated = currentEditing.copy(
+                        name = name.trim(),
+                        sku = trimmedSku,
+                        category = category.trim().ifBlank { "General" },
+                        quantity = validation.parsedQuantity ?: 0,
+                        minimumStock = validation.parsedMinimumStock ?: 0,
+                        purchasePrice = validation.parsedPurchasePrice ?: 0.0,
+                        sellingPrice = validation.parsedSellingPrice ?: 0.0
+                    )
+                    repository.updateItem(updated)
+                } else {
+                    val newItem = InventoryItemEntity(
+                        name = name.trim(),
+                        sku = trimmedSku,
+                        category = category.trim().ifBlank { "General" },
+                        quantity = validation.parsedQuantity ?: 0,
+                        minimumStock = validation.parsedMinimumStock ?: 0,
+                        purchasePrice = validation.parsedPurchasePrice ?: 0.0,
+                        sellingPrice = validation.parsedSellingPrice ?: 0.0
+                    )
+                    repository.addItem(newItem)
+                }
+
+                _isFormDialogOpen.value = false
+                _editingItem.value = null
+                _validationErrors.value = InventoryFormValidationErrors()
+            } catch (e: Exception) {
+                // Catches SQLiteConstraintException or any other DB constraint violations
+                _validationErrors.value = validation.errors.copy(
+                    skuError = "SKU already exists or database constraint failed."
+                )
+            }
         }
-        return true
     }
 
     class Factory(
@@ -106,4 +201,3 @@ class InventoryViewModel(
         }
     }
 }
-
