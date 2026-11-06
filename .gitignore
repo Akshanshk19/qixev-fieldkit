@@ -22,3 +22,6 @@ local.properties
 *.jks
 *.keystore
 keystore.properties
+
+# Qixev Agent OS local hardware diagnostics & raw device dumps
+.qixev/diagnostics/
