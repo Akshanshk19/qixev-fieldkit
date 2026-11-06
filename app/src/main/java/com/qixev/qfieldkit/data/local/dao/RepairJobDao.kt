@@ -18,6 +18,9 @@ interface RepairJobDao {
     @Query("SELECT * FROM repair_jobs ORDER BY updatedAt DESC")
     fun getAllJobs(): Flow<List<RepairJobEntity>>
 
+    @Query("SELECT * FROM repair_jobs ORDER BY id ASC")
+    suspend fun getAllJobsSync(): List<RepairJobEntity>
+
     @Query("SELECT * FROM repair_jobs WHERE id = :jobId LIMIT 1")
     fun getJobByIdFlow(jobId: Long): Flow<RepairJobEntity?>
 
@@ -35,11 +38,17 @@ interface RepairJobDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertJob(job: RepairJobEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAllJobs(jobs: List<RepairJobEntity>)
+
     @Update
     suspend fun updateJob(job: RepairJobEntity)
 
     @Delete
     suspend fun deleteJob(job: RepairJobEntity)
+
+    @Query("DELETE FROM repair_jobs")
+    suspend fun deleteAllJobs()
 
     // Job Parts
     @Query("SELECT * FROM job_parts WHERE jobId = :jobId AND inventoryItemId = :inventoryItemId LIMIT 1")
@@ -48,11 +57,17 @@ interface RepairJobDao {
     @Query("SELECT * FROM job_parts WHERE jobId = :jobId")
     suspend fun getPartsForJob(jobId: Long): List<JobPartCrossRef>
 
+    @Query("SELECT * FROM job_parts ORDER BY jobId ASC, inventoryItemId ASC")
+    suspend fun getAllJobPartsSync(): List<JobPartCrossRef>
+
     @Query("SELECT * FROM job_parts WHERE jobId = :jobId")
     fun getPartsForJobFlow(jobId: Long): Flow<List<JobPartCrossRef>>
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertJobPart(jobPart: JobPartCrossRef)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAllJobParts(parts: List<JobPartCrossRef>)
 
     @Update
     suspend fun updateJobPart(jobPart: JobPartCrossRef)
@@ -62,5 +77,8 @@ interface RepairJobDao {
 
     @Query("DELETE FROM job_parts WHERE jobId = :jobId")
     suspend fun deleteAllPartsForJob(jobId: Long)
+
+    @Query("DELETE FROM job_parts")
+    suspend fun deleteAllJobParts()
 }
 

@@ -15,6 +15,9 @@ interface InventoryItemDao {
     @Query("SELECT * FROM inventory_items ORDER BY id DESC")
     fun getAllInventoryItems(): Flow<List<InventoryItemEntity>>
 
+    @Query("SELECT * FROM inventory_items ORDER BY id ASC")
+    suspend fun getAllInventoryItemsSync(): List<InventoryItemEntity>
+
     @Query("SELECT * FROM inventory_items WHERE id = :id LIMIT 1")
     suspend fun getInventoryItemById(id: Long): InventoryItemEntity?
 
@@ -24,9 +27,15 @@ interface InventoryItemDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertItem(item: InventoryItemEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAll(items: List<InventoryItemEntity>)
+
     @Update
     suspend fun updateItem(item: InventoryItemEntity)
 
     @Delete
     suspend fun deleteItem(item: InventoryItemEntity)
+
+    @Query("DELETE FROM inventory_items")
+    suspend fun deleteAll()
 }

@@ -1,6 +1,7 @@
 package com.qixev.qfieldkit
 
 import android.app.Application
+import com.qixev.qfieldkit.data.backup.BackupRepository
 import com.qixev.qfieldkit.data.local.database.FieldKitDatabase
 import com.qixev.qfieldkit.data.repository.InventoryRepository
 import com.qixev.qfieldkit.data.repository.RepairJobRepository
@@ -20,6 +21,14 @@ class FieldKitApplication : Application() {
             database = database,
             repairJobDao = database.repairJobDao(),
             inventoryItemDao = database.inventoryItemDao()
+        )
+    }
+
+    val backupRepository: BackupRepository by lazy {
+        BackupRepository(
+            database = database,
+            inventoryItemDao = database.inventoryItemDao(),
+            repairJobDao = database.repairJobDao()
         )
     }
 }

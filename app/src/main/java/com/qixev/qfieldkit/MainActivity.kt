@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -25,6 +26,7 @@ import com.qixev.qfieldkit.ui.inventory.InventoryViewModel
 import com.qixev.qfieldkit.ui.jobs.RepairJobListViewModel
 import com.qixev.qfieldkit.ui.navigation.FieldKitNavHost
 import com.qixev.qfieldkit.ui.navigation.Screen
+import com.qixev.qfieldkit.ui.settings.SettingsViewModel
 import com.qixev.qfieldkit.ui.theme.QFieldKitTheme
 
 class MainActivity : ComponentActivity() {
@@ -39,6 +41,11 @@ class MainActivity : ComponentActivity() {
         RepairJobListViewModel.Factory(app.repairJobRepository)
     }
 
+    private val settingsViewModel: SettingsViewModel by viewModels {
+        val app = application as FieldKitApplication
+        SettingsViewModel.Factory(app.backupRepository)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -49,7 +56,9 @@ class MainActivity : ComponentActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
 
-                val showBottomBar = currentRoute == Screen.RepairJobs.route || currentRoute == Screen.Inventory.route
+                val showBottomBar = currentRoute == Screen.RepairJobs.route ||
+                        currentRoute == Screen.Inventory.route ||
+                        currentRoute == Screen.Settings.route
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -84,6 +93,20 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 )
+                                NavigationBarItem(
+                                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                                    label = { Text(stringResource(R.string.nav_settings)) },
+                                    selected = currentRoute == Screen.Settings.route,
+                                    onClick = {
+                                        navController.navigate(Screen.Settings.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                )
                             }
                         }
                     }
@@ -92,8 +115,10 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         inventoryRepository = app.inventoryRepository,
                         repairJobRepository = app.repairJobRepository,
+                        backupRepository = app.backupRepository,
                         inventoryViewModel = inventoryViewModel,
                         repairJobListViewModel = repairJobListViewModel,
+                        settingsViewModel = settingsViewModel,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)

@@ -79,4 +79,19 @@
     <string name="final_cost_display">Final: $%.2f</string>
     <string name="parts_cost_display">Parts Total: $%.2f</string>
     <string name="dismiss">Dismiss</string>
+
+    <!-- Settings & Backup -->
+    <string name="nav_settings">Settings</string>
+    <string name="settings_title">Settings</string>
+    <string name="data_backup_section">Data &amp; Backup</string>
+    <string name="data_backup_subtitle">Protect, export, and restore your repair jobs and inventory records</string>
+    <string name="export_backup_title">Export Full Backup</string>
+    <string name="export_backup_desc">Create a portable JSON backup containing all inventory, repair jobs, and part allocations.</string>
+    <string name="restore_backup_title">Restore Full Backup</string>
+    <string name="restore_backup_desc">Restore your data from a JSON backup file. This completely replaces your current records.</string>
+    <string name="export_csv_title">Export Inventory CSV</string>
+    <string name="export_csv_desc">Export your current inventory to a spreadsheet-compatible CSV file for reporting and sharing.</string>
+    <string name="restore_confirm_title">Restore &amp; Replace Data?</string>
+    <string name="restore_confirm_message">Restoring this backup will permanently replace all current FieldKit data with:\n\n• %1$d inventory items\n• %2$d repair jobs\n• %3$d allocated part records\n\nAll existing local data will be replaced. This action cannot be undone. Do you want to proceed?</string>
+    <string name="restore_confirm_button">Restore &amp; Overwrite</string>
 </resources>

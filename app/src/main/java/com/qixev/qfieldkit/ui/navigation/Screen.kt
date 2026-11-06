@@ -6,4 +6,5 @@ sealed class Screen(val route: String) {
         fun createRoute(jobId: Long) = "jobs/$jobId"
     }
     data object Inventory : Screen("inventory")
+    data object Settings : Screen("settings")
 }

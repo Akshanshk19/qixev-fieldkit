@@ -11,6 +11,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.qixev.qfieldkit.data.backup.BackupRepository
 import com.qixev.qfieldkit.data.repository.InventoryRepository
 import com.qixev.qfieldkit.data.repository.RepairJobRepository
 import com.qixev.qfieldkit.ui.inventory.InventoryScreen
@@ -19,14 +20,18 @@ import com.qixev.qfieldkit.ui.jobs.JobDetailScreen
 import com.qixev.qfieldkit.ui.jobs.JobDetailViewModel
 import com.qixev.qfieldkit.ui.jobs.RepairJobListScreen
 import com.qixev.qfieldkit.ui.jobs.RepairJobListViewModel
+import com.qixev.qfieldkit.ui.settings.SettingsScreen
+import com.qixev.qfieldkit.ui.settings.SettingsViewModel
 
 @Composable
 fun FieldKitNavHost(
     navController: NavHostController,
     inventoryRepository: InventoryRepository,
     repairJobRepository: RepairJobRepository,
+    backupRepository: BackupRepository,
     inventoryViewModel: InventoryViewModel,
     repairJobListViewModel: RepairJobListViewModel,
+    settingsViewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
     // Listen for create job navigation event to navigate to detail screen
@@ -104,6 +109,19 @@ fun FieldKitNavHost(
                 onDismissDeleteDialog = inventoryViewModel::onDismissDeleteDialog,
                 onConfirmDelete = inventoryViewModel::onConfirmDelete,
                 onSaveItem = inventoryViewModel::saveItem
+            )
+        }
+
+        composable(route = Screen.Settings.route) {
+            val uiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
+            SettingsScreen(
+                uiState = uiState,
+                onExportBackup = settingsViewModel::exportFullBackup,
+                onExportCsv = settingsViewModel::exportInventoryCsv,
+                onBackupFileSelected = settingsViewModel::onBackupFileSelected,
+                onConfirmRestore = settingsViewModel::onConfirmRestore,
+                onDismissRestoreConfirmDialog = settingsViewModel::onDismissRestoreConfirmDialog,
+                onClearUserMessage = settingsViewModel::onClearUserMessage
             )
         }
     }
