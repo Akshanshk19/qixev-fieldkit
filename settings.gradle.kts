@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Q FieldKit"
+rootProject.name = "Qixev FieldKit"
 include(":app")

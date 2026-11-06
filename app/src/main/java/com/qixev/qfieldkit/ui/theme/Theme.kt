@@ -1,6 +1,5 @@
 package com.qixev.qfieldkit.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -11,33 +10,64 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+val DarkColorScheme = darkColorScheme(
+    primary = NeutralPrimaryDark,
+    onPrimary = NeutralOnPrimaryDark,
+    primaryContainer = NeutralPrimaryContainerDark,
+    onPrimaryContainer = NeutralOnPrimaryContainerDark,
+    secondary = NeutralSecondaryDark,
+    onSecondary = NeutralOnSecondaryDark,
+    secondaryContainer = NeutralSecondaryContainerDark,
+    onSecondaryContainer = NeutralOnSecondaryContainerDark,
+    tertiary = NeutralTertiaryDark,
+    onTertiary = NeutralOnTertiaryDark,
+    tertiaryContainer = NeutralTertiaryContainerDark,
+    onTertiaryContainer = NeutralOnTertiaryContainerDark,
+    background = NeutralBackgroundDark,
+    onBackground = NeutralOnBackgroundDark,
+    surface = NeutralSurfaceDark,
+    onSurface = NeutralOnSurfaceDark,
+    surfaceVariant = NeutralSurfaceVariantDark,
+    onSurfaceVariant = NeutralOnSurfaceVariantDark,
+    error = ErrorDark,
+    onError = OnErrorDark,
+    errorContainer = ErrorContainerDark,
+    onErrorContainer = OnErrorContainerDark,
+    outline = NeutralOutlineDark,
+    outlineVariant = NeutralOutlineVariantDark
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+val LightColorScheme = lightColorScheme(
+    primary = NeutralPrimaryLight,
+    onPrimary = NeutralOnPrimaryLight,
+    primaryContainer = NeutralPrimaryContainerLight,
+    onPrimaryContainer = NeutralOnPrimaryContainerLight,
+    secondary = NeutralSecondaryLight,
+    onSecondary = NeutralOnSecondaryLight,
+    secondaryContainer = NeutralSecondaryContainerLight,
+    onSecondaryContainer = NeutralOnSecondaryContainerLight,
+    tertiary = NeutralTertiaryLight,
+    onTertiary = NeutralOnTertiaryLight,
+    tertiaryContainer = NeutralTertiaryContainerLight,
+    onTertiaryContainer = NeutralOnTertiaryContainerLight,
+    background = NeutralBackgroundLight,
+    onBackground = NeutralOnBackgroundLight,
+    surface = NeutralSurfaceLight,
+    onSurface = NeutralOnSurfaceLight,
+    surfaceVariant = NeutralSurfaceVariantLight,
+    onSurfaceVariant = NeutralOnSurfaceVariantLight,
+    error = ErrorLight,
+    onError = OnErrorLight,
+    errorContainer = ErrorContainerLight,
+    onErrorContainer = OnErrorContainerLight,
+    outline = NeutralOutlineLight,
+    outlineVariant = NeutralOutlineVariantLight
 )
 
 @Composable
-fun QFieldKitTheme(
+fun QixevFieldKitTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = true, // Primary Material You experience on Android 12+
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -45,7 +75,6 @@ fun QFieldKitTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
@@ -56,3 +85,13 @@ fun QFieldKitTheme(
         content = content
     )
 }
+
+/**
+ * Backward-compatible alias for existing call sites and UI tests.
+ */
+@Composable
+fun QFieldKitTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true,
+    content: @Composable () -> Unit
+) = QixevFieldKitTheme(darkTheme = darkTheme, dynamicColor = dynamicColor, content = content)

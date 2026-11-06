@@ -1,7 +1,9 @@
 package com.qixev.qfieldkit.ui.jobs
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -25,16 +28,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -42,6 +51,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -57,11 +68,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.qixev.qfieldkit.R
 import com.qixev.qfieldkit.data.local.entity.JobStatus
 import com.qixev.qfieldkit.data.local.entity.RepairJobEntity
 import com.qixev.qfieldkit.data.local.model.RepairJobValidationErrors
+import com.qixev.qfieldkit.ui.theme.StatusCompletedBgDark
+import com.qixev.qfieldkit.ui.theme.StatusCompletedBgLight
+import com.qixev.qfieldkit.ui.theme.StatusCompletedTextDark
+import com.qixev.qfieldkit.ui.theme.StatusCompletedTextLight
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -101,25 +117,30 @@ fun RepairJobListScreen(
                 title = {
                     Text(
                         text = stringResource(R.string.jobs_title),
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onOpenCreateDialog,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.new_job)
-                )
+            if (uiState.jobs.isNotEmpty()) {
+                FloatingActionButton(
+                    onClick = onOpenCreateDialog,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.new_job)
+                    )
+                }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -129,25 +150,47 @@ fun RepairJobListScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Search Bar
-            OutlinedTextField(
+            // Compact Material 3 Tonal Search Bar
+            TextField(
                 value = uiState.searchQuery,
                 onValueChange = onSearchQueryChanged,
-                placeholder = { Text(stringResource(R.string.search_jobs_placeholder)) },
+                placeholder = {
+                    Text(
+                        text = stringResource(R.string.search_jobs_placeholder),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
                 leadingIcon = {
-                    Icon(imageVector = Icons.Default.Search, contentDescription = null)
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 },
                 trailingIcon = {
                     if (uiState.searchQuery.isNotEmpty()) {
                         IconButton(onClick = { onSearchQueryChanged("") }) {
-                            Icon(imageVector = Icons.Default.Close, contentDescription = null)
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 },
                 singleLine = true,
+                shape = RoundedCornerShape(24.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
             )
 
             // Status Filter Chips
@@ -159,23 +202,53 @@ fun RepairJobListScreen(
                     .padding(bottom = 8.dp)
             ) {
                 item {
+                    val isSelected = uiState.selectedStatus == null
                     FilterChip(
-                        selected = uiState.selectedStatus == null,
+                        selected = isSelected,
                         onClick = { onStatusSelected(null) },
-                        label = { Text(stringResource(R.string.all_statuses)) }
+                        label = {
+                            Text(
+                                text = stringResource(R.string.all_statuses),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                            selectedBorderColor = Color.Transparent
+                        )
                     )
                 }
                 items(JobStatus.entries.toTypedArray()) { status ->
+                    val isSelected = uiState.selectedStatus == status
                     FilterChip(
-                        selected = uiState.selectedStatus == status,
+                        selected = isSelected,
                         onClick = {
-                            if (uiState.selectedStatus == status) {
-                                onStatusSelected(null)
-                            } else {
-                                onStatusSelected(status)
-                            }
+                            if (isSelected) onStatusSelected(null) else onStatusSelected(status)
                         },
-                        label = { Text(formatJobStatus(status)) }
+                        label = {
+                            Text(
+                                text = formatJobStatus(status),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                            selectedBorderColor = Color.Transparent
+                        )
                     )
                 }
             }
@@ -191,15 +264,23 @@ fun RepairJobListScreen(
                     }
                     uiState.jobs.isEmpty() -> {
                         EmptyJobsView(
-                            title = stringResource(R.string.empty_jobs_title),
-                            subtitle = stringResource(R.string.empty_jobs_subtitle),
+                            isFiltered = false,
+                            onPrimaryAction = onOpenCreateDialog,
+                            onResetFilters = {
+                                onSearchQueryChanged("")
+                                onStatusSelected(null)
+                            },
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
                     uiState.filteredJobs.isEmpty() -> {
                         EmptyJobsView(
-                            title = stringResource(R.string.no_jobs_search_results),
-                            subtitle = stringResource(R.string.no_search_results_subtitle),
+                            isFiltered = true,
+                            onPrimaryAction = onOpenCreateDialog,
+                            onResetFilters = {
+                                onSearchQueryChanged("")
+                                onStatusSelected(null)
+                            },
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
@@ -232,8 +313,8 @@ private fun JobList(
 ) {
     LazyColumn(
         modifier = modifier,
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         items(
             items = jobs,
@@ -259,8 +340,15 @@ private fun RepairJobCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+        )
     ) {
         Column(
             modifier = Modifier
@@ -274,7 +362,7 @@ private fun RepairJobCard(
             ) {
                 Text(
                     text = stringResource(R.string.job_number, job.id),
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -286,14 +374,13 @@ private fun RepairJobCard(
             Text(
                 text = "${job.customerName} • ${job.customerPhone}",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
             Text(
                 text = job.deviceName,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -328,9 +415,9 @@ private fun RepairJobCard(
                     )
                 } else if (job.estimatedCost > 0.0) {
                     Text(
-                        text = "Est: $${String.format(Locale.US, "%.2f", job.estimatedCost)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "Est. $${String.format(Locale.US, "%.2f", job.estimatedCost)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
                     )
                 }
             }
@@ -340,23 +427,28 @@ private fun RepairJobCard(
 
 @Composable
 fun JobStatusBadge(status: JobStatus) {
+    val isDark = isSystemInDarkTheme()
     val (backgroundColor, textColor) = when (status) {
         JobStatus.RECEIVED -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
         JobStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
         JobStatus.WAITING_FOR_PARTS -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
-        JobStatus.COMPLETED -> Color(0xFFD4EDDA) to Color(0xFF155724)
-        JobStatus.DELIVERED -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+        JobStatus.COMPLETED -> if (isDark) {
+            StatusCompletedBgDark to StatusCompletedTextDark
+        } else {
+            StatusCompletedBgLight to StatusCompletedTextLight
+        }
+        JobStatus.DELIVERED -> MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurfaceVariant
         JobStatus.CANCELLED -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
     }
 
     Surface(
         color = backgroundColor,
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(8.dp)
     ) {
         Text(
             text = formatJobStatus(status),
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             color = textColor,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
@@ -377,8 +469,9 @@ fun formatJobStatus(status: JobStatus): String {
 
 @Composable
 private fun EmptyJobsView(
-    title: String,
-    subtitle: String,
+    isFiltered: Boolean,
+    onPrimaryAction: () -> Unit,
+    onResetFilters: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -386,18 +479,73 @@ private fun EmptyJobsView(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isFiltered) Icons.Outlined.Search else Icons.Outlined.Build,
+                contentDescription = null,
+                modifier = Modifier.size(36.dp),
+                tint = if (isFiltered) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
+            )
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
         Text(
-            text = title,
+            text = if (isFiltered) {
+                stringResource(R.string.no_jobs_search_results)
+            } else {
+                stringResource(R.string.empty_jobs_title)
+            },
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(8.dp))
+
+        Spacer(modifier = Modifier.height(6.dp))
+
         Text(
-            text = subtitle,
+            text = if (isFiltered) {
+                stringResource(R.string.no_search_results_subtitle)
+            } else {
+                stringResource(R.string.empty_jobs_subtitle)
+            },
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        if (isFiltered) {
+            OutlinedButton(
+                onClick = onResetFilters,
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Text("Clear filters")
+            }
+        } else {
+            Button(
+                onClick = onPrimaryAction,
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.new_job))
+            }
+        }
     }
 }
 
@@ -421,10 +569,12 @@ private fun CreateJobDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
         title = {
             Text(
                 text = stringResource(R.string.create_job_title),
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold
             )
         },
         text = {
@@ -441,6 +591,7 @@ private fun CreateJobDialog(
                     isError = validationErrors.customerNameError != null,
                     supportingText = validationErrors.customerNameError?.let { { Text(it) } },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -452,6 +603,7 @@ private fun CreateJobDialog(
                     supportingText = validationErrors.customerPhoneError?.let { { Text(it) } },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -462,6 +614,7 @@ private fun CreateJobDialog(
                     isError = validationErrors.deviceNameError != null,
                     supportingText = validationErrors.deviceNameError?.let { { Text(it) } },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -472,6 +625,7 @@ private fun CreateJobDialog(
                     isError = validationErrors.problemDescriptionError != null,
                     supportingText = validationErrors.problemDescriptionError?.let { { Text(it) } },
                     maxLines = 4,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -483,12 +637,13 @@ private fun CreateJobDialog(
                     supportingText = validationErrors.estimatedCostError?.let { { Text(it) } },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = {
                     onConfirm(
                         customerName,
@@ -497,7 +652,8 @@ private fun CreateJobDialog(
                         problemDescription,
                         estimatedCostStr
                     )
-                }
+                },
+                shape = RoundedCornerShape(20.dp)
             ) {
                 Text(stringResource(R.string.save))
             }
@@ -509,4 +665,3 @@ private fun CreateJobDialog(
         }
     )
 }
-

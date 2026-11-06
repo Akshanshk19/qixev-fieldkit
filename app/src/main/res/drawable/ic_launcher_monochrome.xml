@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Monochrome White Q Ring with notch cutout for wrench -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M49.00,27.00 C37.95,27.00 29.00,35.95 29.00,47.00 C29.00,58.05 37.95,67.00 49.00,67.00 C52.38,67.00 55.56,66.16 58.35,64.69 L58.35,64.69 L52.22,58.56 L52.22,58.56 C51.20,58.85 50.12,59.00 49.00,59.00 C42.37,59.00 37.00,53.63 37.00,47.00 C37.00,40.37 42.37,35.00 49.00,35.00 C55.63,35.00 61.00,40.37 61.00,47.00 C61.00,49.20 60.41,51.26 59.37,53.04 L59.37,53.04 L65.14,58.81 L65.14,58.81 C67.57,55.50 69.00,51.42 69.00,47.00 C69.00,35.95 60.05,27.00 49.00,27.00 Z" />
+
+    <!-- Center Bolt / Hex Socket: Outline only -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:pathData="M53.5,44.4 L53.5,49.6 L49,52.2 L44.5,49.6 L44.5,44.4 L49,41.8 Z" />
+
+    <!-- Monochrome White Technical Wrench Tail -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M52.00,56.50 L61.50,66.00 L64.50,73.00 C65.50,75.00 67.50,75.50 69.00,74.00 L69.00,71.00 C68.00,68.50 68.50,68.00 71.00,69.00 L74.00,69.00 C75.50,67.50 75.00,65.50 73.00,64.50 L66.00,61.50 L56.50,52.00 Z" />
+</vector>
+

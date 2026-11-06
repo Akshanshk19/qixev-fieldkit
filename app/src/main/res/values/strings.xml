@@ -96,6 +96,12 @@
     <string name="export_csv_title">Export Inventory CSV</string>
     <string name="export_csv_desc">Export your current inventory to a spreadsheet-compatible CSV file for reporting and sharing.</string>
     <string name="restore_confirm_title">Restore &amp; Replace Data?</string>
-    <string name="restore_confirm_message">Restoring this backup will permanently replace all current FieldKit data with:\n\n• %1$d inventory items\n• %2$d repair jobs\n• %3$d allocated part records\n\nAll existing local data will be replaced. This action cannot be undone. Do you want to proceed?</string>
+    <string name="restore_confirm_message">Restoring this backup will permanently replace all current Qixev FieldKit data with:\n\n• %1$d inventory items\n• %2$d repair jobs\n• %3$d allocated part records\n\nAll existing local data will be replaced. This action cannot be undone. Do you want to proceed?</string>
     <string name="restore_confirm_button">Restore &amp; Overwrite</string>
+
+    <!-- About & App Identity -->
+    <string name="about_section">About</string>
+    <string name="about_tagline">Offline Workshop &amp; Field Inventory</string>
+    <string name="app_version_format">Version %1$s (%2$d)</string>
+    <string name="copyright_notice">© 2026 Qixev. All rights reserved.</string>
 </resources>

@@ -5,13 +5,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -19,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -47,6 +53,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_QFieldKit)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
@@ -62,11 +69,24 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
+                    contentWindowInsets = WindowInsets(0, 0, 0, 0),
                     bottomBar = {
                         if (showBottomBar) {
-                            NavigationBar {
+                            NavigationBar(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                tonalElevation = 3.dp
+                            ) {
                                 NavigationBarItem(
-                                    icon = { Icon(Icons.Default.Build, contentDescription = null) },
+                                    icon = {
+                                        Icon(
+                                            imageVector = if (currentRoute == Screen.RepairJobs.route) {
+                                                Icons.Filled.Build
+                                            } else {
+                                                Icons.Outlined.Build
+                                            },
+                                            contentDescription = null
+                                        )
+                                    },
                                     label = { Text(stringResource(R.string.nav_jobs)) },
                                     selected = currentRoute == Screen.RepairJobs.route,
                                     onClick = {
@@ -80,7 +100,16 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                                 NavigationBarItem(
-                                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
+                                    icon = {
+                                        Icon(
+                                            imageVector = if (currentRoute == Screen.Inventory.route) {
+                                                Icons.AutoMirrored.Filled.List
+                                            } else {
+                                                Icons.AutoMirrored.Outlined.List
+                                            },
+                                            contentDescription = null
+                                        )
+                                    },
                                     label = { Text(stringResource(R.string.nav_inventory)) },
                                     selected = currentRoute == Screen.Inventory.route,
                                     onClick = {
@@ -94,7 +123,16 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                                 NavigationBarItem(
-                                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                                    icon = {
+                                        Icon(
+                                            imageVector = if (currentRoute == Screen.Settings.route) {
+                                                Icons.Filled.Settings
+                                            } else {
+                                                Icons.Outlined.Settings
+                                            },
+                                            contentDescription = null
+                                        )
+                                    },
                                     label = { Text(stringResource(R.string.nav_settings)) },
                                     selected = currentRoute == Screen.Settings.route,
                                     onClick = {
@@ -121,7 +159,7 @@ class MainActivity : ComponentActivity() {
                         settingsViewModel = settingsViewModel,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(innerPadding)
+                            .padding(bottom = innerPadding.calculateBottomPadding())
                     )
                 }
             }

@@ -14,8 +14,8 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.QFieldKit"
-            android:windowSoftInputMode="adjustResize">
+            android:theme="@style/Theme.QFieldKit.Splash"
+            android:windowSoftInputMode="adjustResize|stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

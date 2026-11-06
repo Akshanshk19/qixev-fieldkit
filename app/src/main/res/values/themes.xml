@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <!-- Base Application Theme -->
     <style name="Theme.QFieldKit" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.QixevFieldKit" parent="Theme.QFieldKit" />
+
+    <!-- Cold Start Splash Theme (API 26-30 fallback) -->
+    <style name="Theme.QFieldKit.Splash" parent="Theme.QFieldKit">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
 </resources>
