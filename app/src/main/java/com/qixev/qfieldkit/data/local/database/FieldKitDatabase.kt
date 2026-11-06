@@ -4,17 +4,27 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.qixev.qfieldkit.data.local.dao.InventoryItemDao
+import com.qixev.qfieldkit.data.local.dao.RepairJobDao
 import com.qixev.qfieldkit.data.local.entity.InventoryItemEntity
+import com.qixev.qfieldkit.data.local.entity.JobPartCrossRef
+import com.qixev.qfieldkit.data.local.entity.RepairJobEntity
 
 @Database(
-    entities = [InventoryItemEntity::class],
-    version = 2,
+    entities = [
+        InventoryItemEntity::class,
+        RepairJobEntity::class,
+        JobPartCrossRef::class
+    ],
+    version = 3,
     exportSchema = false
 )
+@TypeConverters(FieldKitConverters::class)
 abstract class FieldKitDatabase : RoomDatabase() {
 
     abstract fun inventoryItemDao(): InventoryItemDao
+    abstract fun repairJobDao(): RepairJobDao
 
     companion object {
         private const val DATABASE_NAME = "fieldkit_database.db"
@@ -29,6 +39,9 @@ abstract class FieldKitDatabase : RoomDatabase() {
                     FieldKitDatabase::class.java,
                     DATABASE_NAME
                 )
+                    .addMigrations(MIGRATION_2_3)
+                    // Note: fallbackToDestructiveMigration is retained strictly for pre-release development.
+                    // It must be removed before production release.
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build().also { INSTANCE = it }
             }
