@@ -65,7 +65,7 @@ class JobDetailViewModel(
             availableInventory = inventory,
             allowedTransitions = allowedTransitions,
             isLocked = isLocked,
-            isLoading = job == null,
+            isLoading = false,
             isAddPartDialogOpen = isAddPartDialogOpen,
             isCancelConfirmationOpen = isCancelConfirmationOpen,
             partPendingRemoval = partPendingRemoval,

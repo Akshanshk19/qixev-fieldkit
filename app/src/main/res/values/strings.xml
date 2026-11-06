@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">Q FieldKit</string>
+    <string name="app_name">Qixev FieldKit</string>
+    <string name="navigate_back">Navigate back</string>
     <string name="inventory_title">Inventory</string>
     <string name="add_item">Add Item</string>
     <string name="add_item_title">Add Inventory Item</string>
@@ -59,6 +60,9 @@
 
     <!-- Job Detail -->
     <string name="job_details_title">Job #%1$d Details</string>
+    <string name="repair_job_not_found_title">Repair job not found</string>
+    <string name="repair_job_not_found_desc">The requested repair job ticket does not exist or has been removed.</string>
+    <string name="back_to_jobs">Back to Jobs</string>
     <string name="customer_info_title">Customer &amp; Device</string>
     <string name="problem_title">Problem Description</string>
     <string name="parts_used_title">Parts Allocated</string>

@@ -40,9 +40,6 @@ abstract class FieldKitDatabase : RoomDatabase() {
                     DATABASE_NAME
                 )
                     .addMigrations(MIGRATION_2_3)
-                    // Note: fallbackToDestructiveMigration is retained strictly for pre-release development.
-                    // It must be removed before production release.
-                    .fallbackToDestructiveMigration(dropAllTables = true)
                     .build().also { INSTANCE = it }
             }
         }

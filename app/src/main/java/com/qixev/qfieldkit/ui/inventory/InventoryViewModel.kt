@@ -107,7 +107,14 @@ class InventoryViewModel(
                 repository.deleteItem(item)
                 _itemPendingDelete.value = null
             } catch (e: Exception) {
-                _userMessage.value = e.localizedMessage
+                _itemPendingDelete.value = null
+                val isForeignKeyViolation = e is android.database.sqlite.SQLiteConstraintException ||
+                        e.message?.contains("FOREIGN KEY", ignoreCase = true) == true
+                _userMessage.value = if (isForeignKeyViolation) {
+                    "This item cannot be deleted because it is used by a repair job."
+                } else {
+                    "Unable to delete item: database constraint or storage error."
+                }
             }
         }
     }

@@ -1,8 +1,13 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val hasReleaseSigning = keystorePropertiesFile.exists()
 
 android {
     namespace = "com.qixev.qfieldkit"
@@ -14,17 +19,38 @@ android {
         applicationId = "com.qixev.qfieldkit"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 100
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            val props = Properties()
+            keystorePropertiesFile.inputStream().use { stream -> props.load(stream) }
+            create("release") {
+                val storeFilePath = props.getProperty("storeFile")
+                if (!storeFilePath.isNullOrBlank()) {
+                    storeFile = rootProject.file(storeFilePath)
+                }
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            optimization {
-                enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }
@@ -67,4 +93,20 @@ dependencies {
 
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+}
+
+tasks.matching { it.name == "packageRelease" || it.name == "validateSigningRelease" }.configureEach {
+    if (!hasReleaseSigning) {
+        doFirst {
+            throw GradleException(
+                "Production release signing is not configured. Missing 'keystore.properties' in root project.\n" +
+                "To build a signed release APK, create 'keystore.properties' containing:\n" +
+                "  storeFile=<path/to/keystore.jks>\n" +
+                "  storePassword=<password>\n" +
+                "  keyAlias=<alias>\n" +
+                "  keyPassword=<password>\n" +
+                "Per security policy, production release builds will NOT fall back to debug signing."
+            )
+        }
+    }
 }

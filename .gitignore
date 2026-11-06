@@ -17,3 +17,8 @@ local.properties
 .idea/discord.xml
 
 .idea/
+
+# Keystore & release signing
+*.jks
+*.keystore
+keystore.properties

@@ -108,6 +108,7 @@ fun FieldKitNavHost(
                 onRequestDelete = inventoryViewModel::onRequestDelete,
                 onDismissDeleteDialog = inventoryViewModel::onDismissDeleteDialog,
                 onConfirmDelete = inventoryViewModel::onConfirmDelete,
+                onClearUserMessage = inventoryViewModel::onClearUserMessage,
                 onSaveItem = inventoryViewModel::saveItem
             )
         }

@@ -104,4 +104,72 @@ class DatabaseMigrationTest {
             context.deleteDatabase(testDbName)
         }
     }
+
+    @Test
+    fun missingMigrationThrowsIllegalStateException_insteadOfDestructiveDrop() {
+        runBlocking {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+        val unmigratedDbName = "unmigrated-test.db"
+        context.deleteDatabase(unmigratedDbName)
+
+        // Create an older schema (v1)
+        val v1Helper = androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory()
+            .create(
+                androidx.sqlite.db.SupportSQLiteOpenHelper.Configuration.builder(context)
+                    .name(unmigratedDbName)
+                    .callback(object : androidx.sqlite.db.SupportSQLiteOpenHelper.Callback(1) {
+                        override fun onCreate(db: SupportSQLiteDatabase) {
+                            db.execSQL(
+                                """
+                                CREATE TABLE IF NOT EXISTS `inventory_items` (
+                                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                    `name` TEXT NOT NULL,
+                                    `sku` TEXT NOT NULL,
+                                    `category` TEXT NOT NULL,
+                                    `quantity` INTEGER NOT NULL,
+                                    `minimumStock` INTEGER NOT NULL,
+                                    `purchasePrice` REAL NOT NULL,
+                                    `sellingPrice` REAL NOT NULL
+                                )
+                                """.trimIndent()
+                            )
+                        }
+
+                        override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+                    })
+                    .build()
+            )
+
+        val v1Db = v1Helper.writableDatabase
+        v1Db.execSQL(
+            "INSERT INTO `inventory_items` (`name`, `sku`, `category`, `quantity`, `minimumStock`, `purchasePrice`, `sellingPrice`) " +
+            "VALUES ('Pre-Migration Item', 'SKU-001', 'General', 10, 1, 5.0, 10.0)"
+        )
+        v1Db.close()
+
+        // Attempt to open with FieldKitDatabase builder (only has MIGRATION_2_3, no v1->v3 migration)
+        // Without fallbackToDestructiveMigration, Room MUST throw an IllegalStateException
+        var caughtException: Exception? = null
+        try {
+            val db = Room.databaseBuilder(context, FieldKitDatabase::class.java, unmigratedDbName)
+                .addMigrations(MIGRATION_2_3)
+                .build()
+            db.inventoryItemDao().getAllInventoryItemsSync()
+            db.close()
+        } catch (e: Exception) {
+            caughtException = e
+        }
+
+        assertTrue(
+            "Expected IllegalStateException due to missing migration without destructive fallback",
+            caughtException is IllegalStateException
+        )
+        assertTrue(
+            "Exception message should mention migration",
+            caughtException?.message?.contains("migration", ignoreCase = true) == true
+        )
+
+        context.deleteDatabase(unmigratedDbName)
+        }
+    }
 }
