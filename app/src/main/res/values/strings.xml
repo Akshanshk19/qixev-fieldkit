@@ -28,4 +28,55 @@
     <string name="min_stock_label">Min: %1$d</string>
     <string name="selling_price_format">Sell: $%.2f</string>
     <string name="cost_price_format">Cost: $%.2f</string>
+
+    <!-- Navigation -->
+    <string name="nav_jobs">Jobs</string>
+    <string name="nav_inventory">Inventory</string>
+
+    <!-- Repair Jobs -->
+    <string name="jobs_title">Repair Jobs</string>
+    <string name="new_job">New Job</string>
+    <string name="create_job_title">New Repair Job</string>
+    <string name="search_jobs_placeholder">Search by customer, device, #ID…</string>
+    <string name="all_statuses">All</string>
+    <string name="empty_jobs_title">No repair jobs</string>
+    <string name="empty_jobs_subtitle">Tap + to create your first repair ticket</string>
+    <string name="no_jobs_search_results">No matching repair jobs</string>
+    <string name="job_number">Job #%1$d</string>
+    <string name="customer_name_label">Customer Name *</string>
+    <string name="customer_phone_label">Phone Number *</string>
+    <string name="device_name_label">Device / Model *</string>
+    <string name="problem_description_label">Reported Problem *</string>
+    <string name="estimated_cost_label">Estimated Cost ($)</string>
+    <string name="created_label">Created: %1$s</string>
+    <string name="updated_label">Updated: %1$s</string>
+    <string name="status_received">Received</string>
+    <string name="status_in_progress">In Progress</string>
+    <string name="status_waiting_parts">Waiting for Parts</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_delivered">Delivered</string>
+    <string name="status_cancelled">Cancelled</string>
+
+    <!-- Job Detail -->
+    <string name="job_details_title">Job #%1$d Details</string>
+    <string name="customer_info_title">Customer &amp; Device</string>
+    <string name="problem_title">Problem Description</string>
+    <string name="parts_used_title">Parts Allocated</string>
+    <string name="add_part">Add Part</string>
+    <string name="no_parts_allocated">No parts allocated to this repair yet.</string>
+    <string name="add_part_title">Allocate Part to Job</string>
+    <string name="select_part_label">Select Inventory Part</string>
+    <string name="quantity_to_use_label">Quantity to Allocate</string>
+    <string name="available_stock_hint">Available stock: %1$d</string>
+    <string name="remove_part_title">Remove Part</string>
+    <string name="remove_part_confirmation">Remove %1$s (%2$d units) from this job? These units will be restored to inventory stock.</string>
+    <string name="cancel_job_title">Cancel Repair Job</string>
+    <string name="cancel_job_confirmation">Are you sure you want to cancel Job #%1$d? All allocated parts will be returned to inventory stock. This action cannot be undone.</string>
+    <string name="status_actions_title">Update Status</string>
+    <string name="job_locked_message">This repair job is %1$s and is locked against further modifications.</string>
+    <string name="cost_summary_title">Cost Summary</string>
+    <string name="estimated_cost_display">Estimated: $%.2f</string>
+    <string name="final_cost_display">Final: $%.2f</string>
+    <string name="parts_cost_display">Parts Total: $%.2f</string>
+    <string name="dismiss">Dismiss</string>
 </resources>
