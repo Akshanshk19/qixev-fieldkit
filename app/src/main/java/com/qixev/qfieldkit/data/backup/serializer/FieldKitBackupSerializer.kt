@@ -33,32 +33,36 @@ object FieldKitBackupSerializer {
                 ),
                 "repairJobs" to JsonValue.JsonArray(
                     backup.repairJobs.map { job ->
-                        JsonValue.JsonObject(
-                            linkedMapOf(
-                                "id" to JsonValue.JsonNumber(job.id.toString()),
-                                "customerName" to JsonValue.JsonString(job.customerName),
-                                "customerPhone" to JsonValue.JsonString(job.customerPhone),
-                                "deviceName" to JsonValue.JsonString(job.deviceName),
-                                "problemDescription" to JsonValue.JsonString(job.problemDescription),
-                                "status" to JsonValue.JsonString(job.status.name),
-                                "estimatedCost" to JsonValue.JsonNumber(job.estimatedCost.toString()),
-                                "finalCost" to JsonValue.JsonNumber(job.finalCost.toString()),
-                                "createdAt" to JsonValue.JsonNumber(job.createdAt.toString()),
-                                "updatedAt" to JsonValue.JsonNumber(job.updatedAt.toString())
-                            )
+                        val jobMap = linkedMapOf(
+                            "id" to JsonValue.JsonNumber(job.id.toString()),
+                            "title" to JsonValue.JsonString(job.displayTitle),
+                            "description" to JsonValue.JsonString(job.displayDescription),
+                            "customerName" to JsonValue.JsonString(job.customerName),
+                            "customerPhone" to JsonValue.JsonString(job.customerPhone),
+                            "deviceName" to JsonValue.JsonString(job.deviceName.ifBlank { job.displayTitle }),
+                            "problemDescription" to JsonValue.JsonString(job.problemDescription.ifBlank { job.displayDescription }),
+                            "status" to JsonValue.JsonString(job.status.name),
+                            "estimatedCost" to JsonValue.JsonNumber(job.estimatedCost.toString()),
+                            "finalCost" to JsonValue.JsonNumber(job.finalCost.toString()),
+                            "createdAt" to JsonValue.JsonNumber(job.createdAt.toString()),
+                            "updatedAt" to JsonValue.JsonNumber(job.updatedAt.toString())
                         )
+                        JsonValue.JsonObject(jobMap)
                     }
                 ),
                 "jobParts" to JsonValue.JsonArray(
                     backup.jobParts.map { part ->
-                        JsonValue.JsonObject(
-                            linkedMapOf(
-                                "jobId" to JsonValue.JsonNumber(part.jobId.toString()),
-                                "inventoryItemId" to JsonValue.JsonNumber(part.inventoryItemId.toString()),
-                                "quantityUsed" to JsonValue.JsonNumber(part.quantityUsed.toString()),
-                                "unitPriceAtTimeOfUse" to JsonValue.JsonNumber(part.unitPriceAtTimeOfUse.toString())
-                            )
+                        val partMap = linkedMapOf<String, JsonValue>(
+                            "id" to JsonValue.JsonNumber(part.id.toString()),
+                            "jobId" to JsonValue.JsonNumber(part.jobId.toString()),
+                            "inventoryItemId" to JsonValue.JsonNumber(part.inventoryItemId.toString()),
+                            "quantityUsed" to JsonValue.JsonNumber(part.quantityUsed.toString()),
+                            "unitPriceAtTimeOfUse" to JsonValue.JsonNumber(part.unitPriceAtTimeOfUse.toString()),
+                            "usedAt" to JsonValue.JsonNumber(part.usedAt.toString())
                         )
+                        part.location?.let { partMap["location"] = JsonValue.JsonString(it) }
+                        part.purpose?.let { partMap["purpose"] = JsonValue.JsonString(it) }
+                        JsonValue.JsonObject(partMap)
                     }
                 )
             )
@@ -109,17 +113,27 @@ object FieldKitBackupSerializer {
             } catch (e: IllegalArgumentException) {
                 throw IllegalArgumentException("repairJobs[$idx] has invalid status '$statusStr'")
             }
+            val rawTitle = obj.getString("title") ?: ""
+            val rawDescription = obj.getString("description") ?: ""
+            val customerName = obj.getString("customerName") ?: ""
+            val customerPhone = obj.getString("customerPhone") ?: ""
+            val rawDevice = obj.getString("deviceName") ?: ""
+            val rawProblem = obj.getString("problemDescription") ?: ""
+
+            val title = rawTitle.ifBlank { rawDevice }
+            val description = rawDescription.ifBlank { rawProblem }
+            val deviceName = rawDevice.ifBlank { title }
+            val problemDescription = rawProblem.ifBlank { description }
+
             RepairJobEntity(
                 id = obj.getLong("id")
                     ?: throw IllegalArgumentException("repairJobs[$idx] is missing 'id'"),
-                customerName = obj.getString("customerName")
-                    ?: throw IllegalArgumentException("repairJobs[$idx] is missing 'customerName'"),
-                customerPhone = obj.getString("customerPhone")
-                    ?: throw IllegalArgumentException("repairJobs[$idx] is missing 'customerPhone'"),
-                deviceName = obj.getString("deviceName")
-                    ?: throw IllegalArgumentException("repairJobs[$idx] is missing 'deviceName'"),
-                problemDescription = obj.getString("problemDescription")
-                    ?: throw IllegalArgumentException("repairJobs[$idx] is missing 'problemDescription'"),
+                title = title,
+                description = description,
+                customerName = customerName,
+                customerPhone = customerPhone,
+                deviceName = deviceName,
+                problemDescription = problemDescription,
                 status = status,
                 estimatedCost = obj.getDouble("estimatedCost") ?: 0.0,
                 finalCost = obj.getDouble("finalCost") ?: 0.0,
@@ -136,6 +150,7 @@ object FieldKitBackupSerializer {
             val obj = el as? JsonValue.JsonObject
                 ?: throw IllegalArgumentException("jobParts[$idx] must be an object")
             JobPartCrossRef(
+                id = obj.getLong("id") ?: 0L,
                 jobId = obj.getLong("jobId")
                     ?: throw IllegalArgumentException("jobParts[$idx] is missing 'jobId'"),
                 inventoryItemId = obj.getLong("inventoryItemId")
@@ -143,7 +158,10 @@ object FieldKitBackupSerializer {
                 quantityUsed = obj.getInt("quantityUsed")
                     ?: throw IllegalArgumentException("jobParts[$idx] is missing 'quantityUsed'"),
                 unitPriceAtTimeOfUse = obj.getDouble("unitPriceAtTimeOfUse")
-                    ?: throw IllegalArgumentException("jobParts[$idx] is missing 'unitPriceAtTimeOfUse'")
+                    ?: throw IllegalArgumentException("jobParts[$idx] is missing 'unitPriceAtTimeOfUse'"),
+                usedAt = obj.getLong("usedAt") ?: 0L,
+                location = obj.getString("location"),
+                purpose = obj.getString("purpose")
             )
         }
 

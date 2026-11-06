@@ -111,7 +111,7 @@ class BackupRepositoryTest {
 
         val backup = backupRepository.createBackup()
 
-        assertEquals(1, backup.backupVersion)
+        assertEquals(FieldKitBackup.CURRENT_VERSION, backup.backupVersion)
         assertNotNull(backup.exportedAt)
         assertEquals(2, backup.inventoryItems.size)
         assertEquals(1, backup.repairJobs.size)
@@ -294,6 +294,87 @@ class BackupRepositoryTest {
         assertEquals("Original part count must remain unchanged", 1, partsAfterFailedRestore.size)
         assertEquals(originalJobId, partsAfterFailedRestore[0].jobId)
         assertEquals(originalItemId, partsAfterFailedRestore[0].inventoryItemId)
+    }
+
+    @Test
+    fun backupRestore_preservesMultipleUsageRecordsIndependently() = runBlocking {
+        // Setup item and job
+        val itemId = inventoryItemDao.insertItem(
+            InventoryItemEntity(
+                name = "Screws M4",
+                sku = "SCR-M4",
+                category = "Fasteners",
+                quantity = 87, // 100 - 5 - 8
+                minimumStock = 10,
+                purchasePrice = 0.2,
+                sellingPrice = 1.0
+            )
+        )
+
+        val jobId = repairJobDao.insertJob(
+            RepairJobEntity(
+                title = "Server Rack Installation",
+                description = "Mount 2x 2U servers",
+                status = JobStatus.IN_PROGRESS
+            )
+        )
+
+        // Insert 2 distinct usage events for the SAME item on the SAME job
+        val usage1Id = repairJobDao.insertJobPart(
+            JobPartCrossRef(
+                jobId = jobId,
+                inventoryItemId = itemId,
+                quantityUsed = 5,
+                unitPriceAtTimeOfUse = 1.0,
+                usedAt = 1700000010000L,
+                location = "Rack A - Top",
+                purpose = "Server 1 rails"
+            )
+        )
+
+        val usage2Id = repairJobDao.insertJobPart(
+            JobPartCrossRef(
+                jobId = jobId,
+                inventoryItemId = itemId,
+                quantityUsed = 8,
+                unitPriceAtTimeOfUse = 1.0,
+                usedAt = 1700000020000L,
+                location = "Rack A - Bottom",
+                purpose = "Server 2 rails"
+            )
+        )
+
+        assertTrue(usage1Id > 0)
+        assertTrue(usage2Id > 0)
+        assertTrue(usage1Id != usage2Id)
+
+        // Export backup
+        val backup = backupRepository.createBackup()
+        assertEquals(2, backup.jobParts.size)
+
+        // Wipe current database
+        repairJobDao.deleteAllJobParts()
+        repairJobDao.deleteAllJobs()
+        inventoryItemDao.deleteAll()
+        assertTrue(repairJobDao.getAllJobPartsSync().isEmpty())
+
+        // Restore backup
+        val restoreResult = backupRepository.restoreBackup(backup)
+        assertTrue(restoreResult.isSuccess)
+
+        // Verify multiple usage records preserved independently
+        val restoredParts = repairJobDao.getPartsForJob(jobId)
+        assertEquals(2, restoredParts.size)
+
+        val restored1 = restoredParts.first { it.location == "Rack A - Top" }
+        assertEquals(5, restored1.quantityUsed)
+        assertEquals("Server 1 rails", restored1.purpose)
+        assertEquals(1700000010000L, restored1.usedAt)
+
+        val restored2 = restoredParts.first { it.location == "Rack A - Bottom" }
+        assertEquals(8, restored2.quantityUsed)
+        assertEquals("Server 2 rails", restored2.purpose)
+        assertEquals(1700000020000L, restored2.usedAt)
     }
 }
 

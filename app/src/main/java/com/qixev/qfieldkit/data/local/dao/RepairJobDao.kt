@@ -50,21 +50,24 @@ interface RepairJobDao {
     @Query("DELETE FROM repair_jobs")
     suspend fun deleteAllJobs()
 
-    // Job Parts
+    // Job Parts / Inventory Usage Events
+    @Query("SELECT * FROM job_parts WHERE id = :usageId LIMIT 1")
+    suspend fun getJobPartById(usageId: Long): JobPartCrossRef?
+
     @Query("SELECT * FROM job_parts WHERE jobId = :jobId AND inventoryItemId = :inventoryItemId LIMIT 1")
     suspend fun getJobPart(jobId: Long, inventoryItemId: Long): JobPartCrossRef?
 
-    @Query("SELECT * FROM job_parts WHERE jobId = :jobId")
+    @Query("SELECT * FROM job_parts WHERE jobId = :jobId ORDER BY usedAt ASC, id ASC")
     suspend fun getPartsForJob(jobId: Long): List<JobPartCrossRef>
 
-    @Query("SELECT * FROM job_parts ORDER BY jobId ASC, inventoryItemId ASC")
+    @Query("SELECT * FROM job_parts ORDER BY jobId ASC, id ASC")
     suspend fun getAllJobPartsSync(): List<JobPartCrossRef>
 
-    @Query("SELECT * FROM job_parts WHERE jobId = :jobId")
+    @Query("SELECT * FROM job_parts WHERE jobId = :jobId ORDER BY usedAt ASC, id ASC")
     fun getPartsForJobFlow(jobId: Long): Flow<List<JobPartCrossRef>>
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insertJobPart(jobPart: JobPartCrossRef)
+    suspend fun insertJobPart(jobPart: JobPartCrossRef): Long
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertAllJobParts(parts: List<JobPartCrossRef>)
@@ -74,6 +77,9 @@ interface RepairJobDao {
 
     @Delete
     suspend fun deleteJobPart(jobPart: JobPartCrossRef)
+
+    @Query("DELETE FROM job_parts WHERE id = :usageId")
+    suspend fun deleteJobPartById(usageId: Long)
 
     @Query("DELETE FROM job_parts WHERE jobId = :jobId")
     suspend fun deleteAllPartsForJob(jobId: Long)

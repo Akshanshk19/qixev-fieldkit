@@ -95,14 +95,29 @@ class RepairJobListViewModel(
         problemDescription: String,
         estimatedCostStr: String
     ) {
-        val validation = RepairJobValidator.validate(
-            customerName = customerName,
-            customerPhone = customerPhone,
-            deviceName = deviceName,
-            problemDescription = problemDescription,
-            estimatedCostStr = estimatedCostStr.ifBlank { "0.0" },
-            finalCostStr = "0.0"
-        )
+        val trimmedDevice = deviceName.trim()
+        val trimmedProblem = problemDescription.trim()
+        val trimmedCustomer = customerName.trim()
+        val trimmedPhone = customerPhone.trim()
+
+        val isWorkUnitOnly = trimmedCustomer.isBlank() && trimmedPhone.isBlank() && trimmedDevice.isNotBlank()
+
+        val validation = if (isWorkUnitOnly) {
+            RepairJobValidator.validateWorkUnit(
+                title = trimmedDevice,
+                description = trimmedProblem,
+                estimatedCostStr = estimatedCostStr.ifBlank { "0.0" }
+            )
+        } else {
+            RepairJobValidator.validate(
+                customerName = customerName,
+                customerPhone = customerPhone,
+                deviceName = deviceName,
+                problemDescription = problemDescription,
+                estimatedCostStr = estimatedCostStr.ifBlank { "0.0" },
+                finalCostStr = "0.0"
+            )
+        }
 
         if (!validation.isValid) {
             _validationErrors.value = validation.errors
@@ -111,10 +126,12 @@ class RepairJobListViewModel(
 
         viewModelScope.launch {
             val result = repository.createJob(
-                customerName = customerName,
-                customerPhone = customerPhone,
-                deviceName = deviceName,
-                problemDescription = problemDescription,
+                title = trimmedDevice,
+                description = trimmedProblem,
+                customerName = trimmedCustomer,
+                customerPhone = trimmedPhone,
+                deviceName = trimmedDevice,
+                problemDescription = trimmedProblem,
                 estimatedCost = validation.parsedEstimatedCost ?: 0.0,
                 finalCost = 0.0
             )

@@ -90,6 +90,37 @@ object RepairJobValidator {
         )
     }
 
+    fun validateWorkUnit(
+        title: String,
+        description: String = "",
+        estimatedCostStr: String = "0.0"
+    ): ValidationResult {
+        var titleError: String? = null
+        var estimatedCostError: String? = null
+
+        if (title.isBlank()) {
+            titleError = "Title cannot be blank"
+        }
+
+        val parsedEstimatedCost = estimatedCostStr.toDoubleOrNull()
+        if (parsedEstimatedCost == null) {
+            estimatedCostError = "Estimated cost must be a valid number"
+        } else if (parsedEstimatedCost < 0.0) {
+            estimatedCostError = "Estimated cost cannot be negative"
+        }
+
+        val errors = RepairJobValidationErrors(
+            deviceNameError = titleError,
+            estimatedCostError = estimatedCostError
+        )
+
+        return ValidationResult(
+            errors = errors,
+            parsedEstimatedCost = parsedEstimatedCost,
+            parsedFinalCost = 0.0
+        )
+    }
+
     fun calculatePartsTotal(parts: List<JobPartCrossRef>): Double {
         return parts.sumOf { it.quantityUsed * it.unitPriceAtTimeOfUse }
     }

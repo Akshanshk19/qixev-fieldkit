@@ -28,9 +28,9 @@ object BackupValidator {
         val version = root.getInt("backupVersion")
             ?: return BackupValidationResult.Error("Missing or invalid 'backupVersion' in backup header.")
 
-        if (version != FieldKitBackup.CURRENT_VERSION) {
+        if (version != 1 && version != FieldKitBackup.CURRENT_VERSION) {
             return BackupValidationResult.Error(
-                "Unsupported backup version $version. This app version supports version ${FieldKitBackup.CURRENT_VERSION}."
+                "Unsupported backup version $version. This app version supports versions 1 and ${FieldKitBackup.CURRENT_VERSION}."
             )
         }
 
@@ -85,17 +85,23 @@ object BackupValidator {
             if (!seenJobIds.add(job.id)) {
                 return BackupValidationResult.Error("Duplicate repair job ID: ${job.id}.")
             }
-            if (job.customerName.isBlank()) {
-                return BackupValidationResult.Error("Repair job #${job.id} has a blank customer name.")
+            val effectiveTitle = job.displayTitle
+            if (effectiveTitle.isBlank()) {
+                return BackupValidationResult.Error("Repair job #${job.id} has a blank title/device name.")
             }
-            if (job.customerPhone.isBlank()) {
-                return BackupValidationResult.Error("Repair job #${job.id} has a blank customer phone.")
-            }
-            if (job.deviceName.isBlank()) {
-                return BackupValidationResult.Error("Repair job #${job.id} has a blank device name.")
-            }
-            if (job.problemDescription.isBlank()) {
-                return BackupValidationResult.Error("Repair job #${job.id} has a blank problem description.")
+            if (version == 1) {
+                if (job.customerName.isBlank()) {
+                    return BackupValidationResult.Error("Repair job #${job.id} has a blank customer name.")
+                }
+                if (job.customerPhone.isBlank()) {
+                    return BackupValidationResult.Error("Repair job #${job.id} has a blank customer phone.")
+                }
+                if (job.deviceName.isBlank()) {
+                    return BackupValidationResult.Error("Repair job #${job.id} has a blank device name.")
+                }
+                if (job.problemDescription.isBlank()) {
+                    return BackupValidationResult.Error("Repair job #${job.id} has a blank problem description.")
+                }
             }
             if (job.estimatedCost < 0.0) {
                 return BackupValidationResult.Error("Repair job #${job.id} has negative estimated cost (${job.estimatedCost}).")
@@ -113,6 +119,7 @@ object BackupValidator {
 
         // Validate Job Parts & Referential Integrity
         val seenPartKeys = mutableSetOf<Pair<Long, Long>>()
+        val seenUsageIds = mutableSetOf<Long>()
 
         for (part in backup.jobParts) {
             if (!seenJobIds.contains(part.jobId)) {
@@ -125,11 +132,19 @@ object BackupValidator {
                     "Job part for job #${part.jobId} references unknown inventory item ID ${part.inventoryItemId}. Referential integrity violated."
                 )
             }
-            val key = Pair(part.jobId, part.inventoryItemId)
-            if (!seenPartKeys.add(key)) {
-                return BackupValidationResult.Error(
-                    "Duplicate part record for job #${part.jobId} and item #${part.inventoryItemId}."
-                )
+            if (version == 1) {
+                val key = Pair(part.jobId, part.inventoryItemId)
+                if (!seenPartKeys.add(key)) {
+                    return BackupValidationResult.Error(
+                        "Duplicate part record for job #${part.jobId} and item #${part.inventoryItemId}."
+                    )
+                }
+            } else {
+                if (part.id > 0L && !seenUsageIds.add(part.id)) {
+                    return BackupValidationResult.Error(
+                        "Duplicate usage record ID ${part.id} found in backup."
+                    )
+                }
             }
             if (part.quantityUsed <= 0) {
                 return BackupValidationResult.Error(

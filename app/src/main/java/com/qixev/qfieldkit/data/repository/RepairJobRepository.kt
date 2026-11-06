@@ -43,20 +43,29 @@ class RepairJobRepository(
     }
 
     suspend fun createJob(
-        customerName: String,
-        customerPhone: String,
-        deviceName: String,
-        problemDescription: String,
+        customerName: String = "",
+        customerPhone: String = "",
+        deviceName: String = "",
+        problemDescription: String = "",
+        title: String = "",
+        description: String = "",
         estimatedCost: Double = 0.0,
         finalCost: Double = 0.0,
         status: JobStatus = JobStatus.RECEIVED
     ): OperationResult<Long> {
+        val effectiveTitle = title.ifBlank { deviceName }.trim()
+        val effectiveDesc = description.ifBlank { problemDescription }.trim()
+        val effectiveDevice = deviceName.ifBlank { effectiveTitle }.trim()
+        val effectiveProblem = problemDescription.ifBlank { effectiveDesc }.trim()
+
         val now = System.currentTimeMillis()
         val job = RepairJobEntity(
+            title = effectiveTitle,
+            description = effectiveDesc,
             customerName = customerName.trim(),
             customerPhone = customerPhone.trim(),
-            deviceName = deviceName.trim(),
-            problemDescription = problemDescription.trim(),
+            deviceName = effectiveDevice,
+            problemDescription = effectiveProblem,
             status = status,
             estimatedCost = estimatedCost,
             finalCost = finalCost,
@@ -69,12 +78,14 @@ class RepairJobRepository(
 
     suspend fun updateJobDetails(
         jobId: Long,
-        customerName: String,
-        customerPhone: String,
-        deviceName: String,
-        problemDescription: String,
-        estimatedCost: Double,
-        finalCost: Double
+        customerName: String = "",
+        customerPhone: String = "",
+        deviceName: String = "",
+        problemDescription: String = "",
+        title: String = "",
+        description: String = "",
+        estimatedCost: Double = 0.0,
+        finalCost: Double = 0.0
     ): OperationResult<Unit> = database.withTransaction {
         val existing = repairJobDao.getJobById(jobId)
             ?: return@withTransaction OperationResult.Failure(RepairJobError.JobNotFound)
@@ -83,11 +94,18 @@ class RepairJobRepository(
             return@withTransaction OperationResult.Failure(RepairJobError.JobLocked(existing.status.name))
         }
 
+        val effectiveTitle = title.ifBlank { deviceName.ifBlank { existing.displayTitle } }.trim()
+        val effectiveDesc = description.ifBlank { problemDescription.ifBlank { existing.displayDescription } }.trim()
+        val effectiveDevice = deviceName.ifBlank { effectiveTitle }.trim()
+        val effectiveProblem = problemDescription.ifBlank { effectiveDesc }.trim()
+
         val updated = existing.copy(
+            title = effectiveTitle,
+            description = effectiveDesc,
             customerName = customerName.trim(),
             customerPhone = customerPhone.trim(),
-            deviceName = deviceName.trim(),
-            problemDescription = problemDescription.trim(),
+            deviceName = effectiveDevice,
+            problemDescription = effectiveProblem,
             estimatedCost = estimatedCost,
             finalCost = finalCost,
             updatedAt = System.currentTimeMillis()
@@ -119,7 +137,9 @@ class RepairJobRepository(
     suspend fun addPartToJob(
         jobId: Long,
         inventoryItemId: Long,
-        quantity: Int
+        quantity: Int,
+        location: String? = null,
+        purpose: String? = null
     ): OperationResult<Unit> = database.withTransaction {
         if (quantity <= 0) {
             return@withTransaction OperationResult.Failure(RepairJobError.InvalidQuantity(quantity))
@@ -148,25 +168,50 @@ class RepairJobRepository(
         val updatedStock = item.quantity - quantity
         inventoryItemDao.updateItem(item.copy(quantity = updatedStock))
 
-        // 2. Insert or update JobPartCrossRef
-        val existingRef = repairJobDao.getJobPart(jobId, inventoryItemId)
-        if (existingRef != null) {
-            val updatedRef = existingRef.copy(
-                quantityUsed = existingRef.quantityUsed + quantity
-                // Note: Keep unitPriceAtTimeOfUse unchanged to preserve initial snapshot price
-            )
-            repairJobDao.updateJobPart(updatedRef)
-        } else {
-            val newRef = JobPartCrossRef(
-                jobId = jobId,
-                inventoryItemId = inventoryItemId,
-                quantityUsed = quantity,
-                unitPriceAtTimeOfUse = item.sellingPrice
-            )
-            repairJobDao.insertJobPart(newRef)
-        }
+        val now = System.currentTimeMillis()
+        val locTrimmed = location?.trim()?.ifBlank { null }
+        val purposeTrimmed = purpose?.trim()?.ifBlank { null }
+
+        // 2. Insert new distinct usage event
+        val newRef = JobPartCrossRef(
+            jobId = jobId,
+            inventoryItemId = inventoryItemId,
+            quantityUsed = quantity,
+            unitPriceAtTimeOfUse = item.sellingPrice,
+            usedAt = now,
+            location = locTrimmed,
+            purpose = purposeTrimmed
+        )
+        repairJobDao.insertJobPart(newRef)
 
         // 3. Update Job updatedAt timestamp
+        repairJobDao.updateJob(job.copy(updatedAt = now))
+
+        OperationResult.Success(Unit)
+    }
+
+    suspend fun removeUsageRecord(usageId: Long): OperationResult<Unit> = database.withTransaction {
+        val crossRef = repairJobDao.getJobPartById(usageId)
+            ?: return@withTransaction OperationResult.Failure(RepairJobError.InventoryItemNotFound)
+
+        val job = repairJobDao.getJobById(crossRef.jobId)
+            ?: return@withTransaction OperationResult.Failure(RepairJobError.JobNotFound)
+
+        if (job.status == JobStatus.DELIVERED || job.status == JobStatus.CANCELLED) {
+            return@withTransaction OperationResult.Failure(RepairJobError.JobLocked(job.status.name))
+        }
+
+        val item = inventoryItemDao.getInventoryItemById(crossRef.inventoryItemId)
+        if (item != null) {
+            // Restore inventory for this specific usage event
+            val restoredQuantity = item.quantity + crossRef.quantityUsed
+            inventoryItemDao.updateItem(item.copy(quantity = restoredQuantity))
+        }
+
+        // Delete specific usage event row
+        repairJobDao.deleteJobPart(crossRef)
+
+        // Update Job updatedAt
         repairJobDao.updateJob(job.copy(updatedAt = System.currentTimeMillis()))
 
         OperationResult.Success(Unit)
@@ -176,30 +221,9 @@ class RepairJobRepository(
         jobId: Long,
         inventoryItemId: Long
     ): OperationResult<Unit> = database.withTransaction {
-        val job = repairJobDao.getJobById(jobId)
-            ?: return@withTransaction OperationResult.Failure(RepairJobError.JobNotFound)
-
-        if (job.status == JobStatus.DELIVERED || job.status == JobStatus.CANCELLED) {
-            return@withTransaction OperationResult.Failure(RepairJobError.JobLocked(job.status.name))
-        }
-
         val crossRef = repairJobDao.getJobPart(jobId, inventoryItemId)
             ?: return@withTransaction OperationResult.Failure(RepairJobError.InventoryItemNotFound)
-
-        val item = inventoryItemDao.getInventoryItemById(inventoryItemId)
-        if (item != null) {
-            // Restore inventory
-            val restoredQuantity = item.quantity + crossRef.quantityUsed
-            inventoryItemDao.updateItem(item.copy(quantity = restoredQuantity))
-        }
-
-        // Delete job part row
-        repairJobDao.deleteJobPart(crossRef)
-
-        // Update Job updatedAt
-        repairJobDao.updateJob(job.copy(updatedAt = System.currentTimeMillis()))
-
-        OperationResult.Success(Unit)
+        removeUsageRecord(crossRef.id)
     }
 
     suspend fun cancelJob(jobId: Long): OperationResult<Unit> = database.withTransaction {

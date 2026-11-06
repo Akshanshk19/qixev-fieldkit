@@ -78,7 +78,7 @@ fun JobDetailScreen(
     onTransitionStatus: (JobStatus) -> Unit,
     onOpenAddPartDialog: () -> Unit,
     onDismissAddPartDialog: () -> Unit,
-    onAddPart: (inventoryItemId: Long, quantity: Int) -> Unit,
+    onAddPart: (inventoryItemId: Long, quantity: Int, location: String?, purpose: String?) -> Unit,
     onRequestRemovePart: (JobPartDetail) -> Unit,
     onDismissRemovePart: () -> Unit,
     onConfirmRemovePart: () -> Unit,
@@ -247,7 +247,7 @@ fun JobDetailScreen(
                     }
                 }
 
-                // Customer & Device Information
+                // Work Unit Title & Description
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -258,58 +258,53 @@ fun JobDetailScreen(
                             .padding(16.dp)
                     ) {
                         Text(
-                            text = stringResource(R.string.customer_info_title),
-                            style = MaterialTheme.typography.titleSmall,
+                            text = job.displayTitle,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = job.customerName,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = job.customerPhone,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = stringResource(R.string.device_name_label).replace("*", "").trim(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        Text(
-                            text = job.deviceName,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        if (job.displayDescription.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = job.displayDescription,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
-                // Reported Problem
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
+                // Optional Customer Information
+                if (job.customerName.isNotBlank() && job.customerName != "General") {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
-                        Text(
-                            text = stringResource(R.string.problem_title),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = job.problemDescription,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.customer_info_title),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = job.customerName,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (job.customerPhone.isNotBlank() && job.customerPhone != "N/A") {
+                                Text(
+                                    text = job.customerPhone,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -385,6 +380,27 @@ fun JobDetailScreen(
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
+                                            if (partDetail.usedAt > 0) {
+                                                Text(
+                                                    text = stringResource(R.string.used_at_format, dateFormat.format(Date(partDetail.usedAt))),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                            }
+                                            if (!partDetail.location.isNullOrBlank()) {
+                                                Text(
+                                                    text = stringResource(R.string.location_format, partDetail.location!!),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                            }
+                                            if (!partDetail.purpose.isNullOrBlank()) {
+                                                Text(
+                                                    text = stringResource(R.string.purpose_format, partDetail.purpose!!),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                            }
                                         }
 
                                         Text(
@@ -577,10 +593,12 @@ fun JobDetailScreen(
 private fun AddPartDialog(
     availableInventory: List<InventoryItemEntity>,
     onDismiss: () -> Unit,
-    onConfirm: (inventoryItemId: Long, quantity: Int) -> Unit
+    onConfirm: (inventoryItemId: Long, quantity: Int, location: String?, purpose: String?) -> Unit
 ) {
     var selectedItem by remember { mutableStateOf<InventoryItemEntity?>(null) }
     var quantityStr by rememberSaveable { mutableStateOf("1") }
+    var locationStr by rememberSaveable { mutableStateOf("") }
+    var purposeStr by rememberSaveable { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var quantityError by remember { mutableStateOf<String?>(null) }
 
@@ -648,6 +666,22 @@ private fun AddPartDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                OutlinedTextField(
+                    value = locationStr,
+                    onValueChange = { locationStr = it },
+                    label = { Text(stringResource(R.string.usage_location_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = purposeStr,
+                    onValueChange = { purposeStr = it },
+                    label = { Text(stringResource(R.string.usage_purpose_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
@@ -667,7 +701,12 @@ private fun AddPartDialog(
                         quantityError = "Cannot allocate more than available stock (${item.quantity})"
                         return@TextButton
                     }
-                    onConfirm(item.id, qty)
+                    onConfirm(
+                        item.id,
+                        qty,
+                        locationStr.trim().ifBlank { null },
+                        purposeStr.trim().ifBlank { null }
+                    )
                 }
             ) {
                 Text(stringResource(R.string.save))

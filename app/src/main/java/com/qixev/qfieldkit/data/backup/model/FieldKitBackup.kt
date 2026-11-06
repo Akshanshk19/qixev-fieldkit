@@ -12,7 +12,7 @@ data class FieldKitBackup(
     val jobParts: List<JobPartCrossRef>
 ) {
     companion object {
-        const val CURRENT_VERSION = 1
+        const val CURRENT_VERSION = 2
     }
 }
 

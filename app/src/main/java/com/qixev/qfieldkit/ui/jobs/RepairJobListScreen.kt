@@ -372,26 +372,34 @@ private fun RepairJobCard(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "${job.customerName} • ${job.customerPhone}",
+                text = job.displayTitle,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            Text(
-                text = job.deviceName,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (job.customerName.isNotBlank() && job.customerName != "General") {
+                val contactInfo = if (job.customerPhone.isNotBlank() && job.customerPhone != "N/A") {
+                    "${job.customerName} • ${job.customerPhone}"
+                } else {
+                    job.customerName
+                }
+                Text(
+                    text = contactInfo,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = job.problemDescription,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2
-            )
+            if (job.displayDescription.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = job.displayDescription,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2
+                )
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -585,32 +593,9 @@ private fun CreateJobDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 OutlinedTextField(
-                    value = customerName,
-                    onValueChange = { customerName = it },
-                    label = { Text(stringResource(R.string.customer_name_label)) },
-                    isError = validationErrors.customerNameError != null,
-                    supportingText = validationErrors.customerNameError?.let { { Text(it) } },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = customerPhone,
-                    onValueChange = { customerPhone = it },
-                    label = { Text(stringResource(R.string.customer_phone_label)) },
-                    isError = validationErrors.customerPhoneError != null,
-                    supportingText = validationErrors.customerPhoneError?.let { { Text(it) } },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
                     value = deviceName,
                     onValueChange = { deviceName = it },
-                    label = { Text(stringResource(R.string.device_name_label)) },
+                    label = { Text(stringResource(R.string.work_unit_title_label)) },
                     isError = validationErrors.deviceNameError != null,
                     supportingText = validationErrors.deviceNameError?.let { { Text(it) } },
                     singleLine = true,
@@ -621,7 +606,7 @@ private fun CreateJobDialog(
                 OutlinedTextField(
                     value = problemDescription,
                     onValueChange = { problemDescription = it },
-                    label = { Text(stringResource(R.string.problem_description_label)) },
+                    label = { Text(stringResource(R.string.work_unit_desc_label)) },
                     isError = validationErrors.problemDescriptionError != null,
                     supportingText = validationErrors.problemDescriptionError?.let { { Text(it) } },
                     maxLines = 4,
@@ -636,6 +621,36 @@ private fun CreateJobDialog(
                     isError = validationErrors.estimatedCostError != null,
                     supportingText = validationErrors.estimatedCostError?.let { { Text(it) } },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Text(
+                    text = stringResource(R.string.optional_customer_title),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
+                OutlinedTextField(
+                    value = customerName,
+                    onValueChange = { customerName = it },
+                    label = { Text(stringResource(R.string.customer_name_label).replace("*", "").trim()) },
+                    isError = validationErrors.customerNameError != null,
+                    supportingText = validationErrors.customerNameError?.let { { Text(it) } },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = customerPhone,
+                    onValueChange = { customerPhone = it },
+                    label = { Text(stringResource(R.string.customer_phone_label).replace("*", "").trim()) },
+                    isError = validationErrors.customerPhoneError != null,
+                    supportingText = validationErrors.customerPhoneError?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()

@@ -114,7 +114,7 @@ class RepairJobRepositoryTest {
     }
 
     @Test
-    fun addPart_duplicateItem_incrementsQuantityAndPreservesHistoricalPrice() = runBlocking {
+    fun sameItemUsedTwiceOnSameJob_createsDistinctUsageRecords() = runBlocking {
         val itemId = inventoryItemDao.insertItem(
             InventoryItemEntity(
                 name = "Thermal Pad",
@@ -134,25 +134,156 @@ class RepairJobRepositoryTest {
             problemDescription = "Overheating"
         ) as OperationResult.Success).data
 
-        // First addition: 2 units at $5.0
-        repository.addPartToJob(jobId, itemId, quantity = 2)
+        // First usage: 2 units at $5.0 on Bench 1
+        val firstAdd = repository.addPartToJob(jobId, itemId, quantity = 2, location = "Bench 1", purpose = "CPU repaste")
+        assertTrue(firstAdd.isSuccess)
 
-        // Change inventory catalog price to $8.0 (simulating price change next week)
+        // Change inventory catalog price to $8.0
         val currentItem = inventoryItemDao.getInventoryItemById(itemId)!!
         inventoryItemDao.updateItem(currentItem.copy(sellingPrice = 8.0))
 
-        // Second addition of same part: 3 more units
-        val secondAdd = repository.addPartToJob(jobId, itemId, quantity = 3)
+        // Second usage: 3 more units on Bench 2
+        val secondAdd = repository.addPartToJob(jobId, itemId, quantity = 3, location = "Bench 2", purpose = "GPU repaste")
         assertTrue(secondAdd.isSuccess)
 
-        // Inventory should decrease from 20 -> 18 -> 15
+        // Inventory must decrease from 20 -> 18 -> 15
         val finalItem = inventoryItemDao.getInventoryItemById(itemId)
         assertEquals(15, finalItem?.quantity)
 
-        // Job part quantity should be 2 + 3 = 5, price must remain initial historical $5.0
-        val jobPart = repairJobDao.getJobPart(jobId, itemId)
-        assertEquals(5, jobPart?.quantityUsed)
-        assertEquals(5.0, jobPart?.unitPriceAtTimeOfUse ?: 0.0, 0.001)
+        // Must be two distinct usage records in job_parts
+        val parts = repairJobDao.getPartsForJob(jobId)
+        assertEquals(2, parts.size)
+
+        val usage1 = parts[0]
+        assertEquals(2, usage1.quantityUsed)
+        assertEquals(5.0, usage1.unitPriceAtTimeOfUse, 0.001)
+        assertEquals("Bench 1", usage1.location)
+        assertEquals("CPU repaste", usage1.purpose)
+
+        val usage2 = parts[1]
+        assertEquals(3, usage2.quantityUsed)
+        assertEquals(8.0, usage2.unitPriceAtTimeOfUse, 0.001)
+        assertEquals("Bench 2", usage2.location)
+        assertEquals("GPU repaste", usage2.purpose)
+        assertTrue(usage1.id != usage2.id)
+    }
+
+    @Test
+    fun removingOneUsageRecord_restoresOnlyThatUsageQuantity() = runBlocking {
+        val itemId = inventoryItemDao.insertItem(
+            InventoryItemEntity(
+                name = "Screws M3x6",
+                sku = "SCR-M3",
+                category = "Fasteners",
+                quantity = 50,
+                minimumStock = 10,
+                purchasePrice = 0.1,
+                sellingPrice = 0.5
+            )
+        )
+
+        val jobId = (repository.createJob(
+            title = "Chassis Assembly",
+            description = "Assemble mainframe"
+        ) as OperationResult.Success).data
+
+        // Usage 1: 4 screws
+        repository.addPartToJob(jobId, itemId, quantity = 4, location = "Front panel", purpose = "Bezel mounting")
+        // Usage 2: 6 screws
+        repository.addPartToJob(jobId, itemId, quantity = 6, location = "Back panel", purpose = "PSU bracket")
+
+        // Stock: 50 - 4 - 6 = 40
+        assertEquals(40, inventoryItemDao.getInventoryItemById(itemId)?.quantity)
+
+        val parts = repairJobDao.getPartsForJob(jobId)
+        assertEquals(2, parts.size)
+        val usageToRemove = parts.first { it.location == "Front panel" }
+
+        // Remove only usage 1 (4 screws)
+        val removeResult = repository.removeUsageRecord(usageToRemove.id)
+        assertTrue(removeResult.isSuccess)
+
+        // Stock restored only by 4: 40 + 4 = 44
+        assertEquals(44, inventoryItemDao.getInventoryItemById(itemId)?.quantity)
+
+        // Only 1 usage record remains
+        val remainingParts = repairJobDao.getPartsForJob(jobId)
+        assertEquals(1, remainingParts.size)
+        assertEquals("Back panel", remainingParts[0].location)
+        assertEquals(6, remainingParts[0].quantityUsed)
+    }
+
+    @Test
+    fun cancellingWorkUnit_restoresTotalQuantityExactlyOnce() = runBlocking {
+        val itemId = inventoryItemDao.insertItem(
+            InventoryItemEntity(
+                name = "Stand-off M3",
+                sku = "STND-M3",
+                category = "Fasteners",
+                quantity = 30,
+                minimumStock = 5,
+                purchasePrice = 0.2,
+                sellingPrice = 0.8
+            )
+        )
+
+        val jobId = (repository.createJob(
+            title = "Motherboard Mount Project",
+            description = "Install stand-offs"
+        ) as OperationResult.Success).data
+
+        // Add 5, then add 7
+        repository.addPartToJob(jobId, itemId, quantity = 5)
+        repository.addPartToJob(jobId, itemId, quantity = 7)
+
+        // Stock: 30 - 5 - 7 = 18
+        assertEquals(18, inventoryItemDao.getInventoryItemById(itemId)?.quantity)
+
+        // Cancel job
+        val cancelResult = repository.cancelJob(jobId)
+        assertTrue(cancelResult.isSuccess)
+
+        // Total quantity restored exactly once: 18 + 5 + 7 = 30
+        assertEquals(30, inventoryItemDao.getInventoryItemById(itemId)?.quantity)
+        assertTrue(repairJobDao.getPartsForJob(jobId).isEmpty())
+
+        // Calling cancelJob again (idempotent) must NOT re-credit inventory
+        val secondCancel = repository.cancelJob(jobId)
+        assertTrue(secondCancel.isSuccess)
+        assertEquals(30, inventoryItemDao.getInventoryItemById(itemId)?.quantity)
+    }
+
+    @Test
+    fun stockCannotBecomeNegative_insufficientStockRejectedAndRolledBack() = runBlocking {
+        val itemId = inventoryItemDao.insertItem(
+            InventoryItemEntity(
+                name = "Power Supply 500W",
+                sku = "PSU-500",
+                category = "Power",
+                quantity = 2,
+                minimumStock = 1,
+                purchasePrice = 30.0,
+                sellingPrice = 65.0
+            )
+        )
+
+        val jobId = (repository.createJob(
+            title = "Workstation Build",
+            description = "Build desktop"
+        ) as OperationResult.Success).data
+
+        // Request 5 units when only 2 available
+        val result = repository.addPartToJob(jobId, itemId, quantity = 5)
+        assertTrue(result.isFailure)
+        val error = (result as OperationResult.Failure).error
+        assertTrue(error is RepairJobError.InsufficientStock)
+        assertEquals(2, (error as RepairJobError.InsufficientStock).available)
+        assertEquals(5, error.requested)
+
+        // Inventory stock must remain strictly 2, not negative
+        val item = inventoryItemDao.getInventoryItemById(itemId)
+        assertEquals(2, item?.quantity)
+        assertTrue(repairJobDao.getPartsForJob(jobId).isEmpty())
     }
 
     @Test
@@ -352,6 +483,126 @@ class RepairJobRepositoryTest {
 
         // Job parts must be automatically cascade-deleted
         assertTrue(repairJobDao.getPartsForJob(jobId).isEmpty())
+    }
+
+    @Test
+    fun createJob_withTitleAndDescription_persistsGenericWorkUnit() = runBlocking {
+        val result = repository.createJob(
+            title = "HVAC Quarterly Maintenance",
+            description = "Replace air filters and inspect ducting"
+        )
+        assertTrue(result.isSuccess)
+        val jobId = (result as OperationResult.Success).data
+
+        val retrieved = repairJobDao.getJobById(jobId)
+        assertNotNull(retrieved)
+        assertEquals("HVAC Quarterly Maintenance", retrieved?.displayTitle)
+        assertEquals("Replace air filters and inspect ducting", retrieved?.displayDescription)
+    }
+
+    @Test
+    fun addPart_withLocationAndPurpose_recordsUsageMetadata() = runBlocking {
+        val itemId = inventoryItemDao.insertItem(
+            InventoryItemEntity(
+                name = "Air Filter 20x20",
+                sku = "FLT-2020",
+                category = "Filters",
+                quantity = 15,
+                minimumStock = 3,
+                purchasePrice = 8.0,
+                sellingPrice = 18.0
+            )
+        )
+
+        val jobId = (repository.createJob(
+            title = "Building A HVAC Overhaul",
+            description = "Quarterly system maintenance"
+        ) as OperationResult.Success).data
+
+        val beforeTime = System.currentTimeMillis()
+        val addResult = repository.addPartToJob(
+            jobId = jobId,
+            inventoryItemId = itemId,
+            quantity = 4,
+            location = "Air Handler 3 (Roof)",
+            purpose = "Intake filter swap"
+        )
+        assertTrue(addResult.isSuccess)
+
+        // Check stock decremented
+        val item = inventoryItemDao.getInventoryItemById(itemId)
+        assertEquals(11, item?.quantity)
+
+        // Check cross ref contains location, purpose, and valid timestamp
+        val part = repairJobDao.getJobPart(jobId, itemId)
+        assertNotNull(part)
+        assertEquals(4, part?.quantityUsed)
+        assertEquals(18.0, part?.unitPriceAtTimeOfUse ?: 0.0, 0.001)
+        assertEquals("Air Handler 3 (Roof)", part?.location)
+        assertEquals("Intake filter swap", part?.purpose)
+        assertTrue("usedAt timestamp must be recorded", (part?.usedAt ?: 0L) >= beforeTime)
+    }
+
+    @Test
+    fun addMultipleParts_toWorkUnit_preservesUsageIndependently() = runBlocking {
+        val item1Id = inventoryItemDao.insertItem(
+            InventoryItemEntity(
+                name = "Cat6 Jack RJ45",
+                sku = "JK-RJ45",
+                category = "Cabling",
+                quantity = 50,
+                minimumStock = 10,
+                purchasePrice = 1.0,
+                sellingPrice = 3.5
+            )
+        )
+        val item2Id = inventoryItemDao.insertItem(
+            InventoryItemEntity(
+                name = "Faceplate 2-Port",
+                sku = "FP-2P",
+                category = "Cabling",
+                quantity = 25,
+                minimumStock = 5,
+                purchasePrice = 1.5,
+                sellingPrice = 4.0
+            )
+        )
+
+        val jobId = (repository.createJob(
+            title = "Conference Room Network Drop",
+            description = "Add 2 RJ45 network jacks"
+        ) as OperationResult.Success).data
+
+        repository.addPartToJob(
+            jobId = jobId,
+            inventoryItemId = item1Id,
+            quantity = 2,
+            location = "Wall Box East",
+            purpose = "Port 1 and Port 2 termination"
+        )
+
+        repository.addPartToJob(
+            jobId = jobId,
+            inventoryItemId = item2Id,
+            quantity = 1,
+            location = "Wall Box East",
+            purpose = "Dual port wall plate"
+        )
+
+        val parts = repairJobDao.getPartsForJob(jobId)
+        assertEquals(2, parts.size)
+
+        val jackPart = parts.first { it.inventoryItemId == item1Id }
+        assertEquals(2, jackPart.quantityUsed)
+        assertEquals("Port 1 and Port 2 termination", jackPart.purpose)
+
+        val platePart = parts.first { it.inventoryItemId == item2Id }
+        assertEquals(1, platePart.quantityUsed)
+        assertEquals("Dual port wall plate", platePart.purpose)
+
+        // Verify inventory balances
+        assertEquals(48, inventoryItemDao.getInventoryItemById(item1Id)?.quantity)
+        assertEquals(24, inventoryItemDao.getInventoryItemById(item2Id)?.quantity)
     }
 }
 

@@ -114,9 +114,14 @@ class JobDetailViewModel(
         }
     }
 
-    fun addPart(inventoryItemId: Long, quantity: Int) {
+    fun addPart(
+        inventoryItemId: Long,
+        quantity: Int,
+        location: String? = null,
+        purpose: String? = null
+    ) {
         viewModelScope.launch {
-            val result = repairJobRepository.addPartToJob(jobId, inventoryItemId, quantity)
+            val result = repairJobRepository.addPartToJob(jobId, inventoryItemId, quantity, location, purpose)
             when (result) {
                 is OperationResult.Success -> {
                     _isAddPartDialogOpen.value = false
@@ -131,7 +136,11 @@ class JobDetailViewModel(
     fun confirmRemovePart() {
         val part = _partPendingRemoval.value ?: return
         viewModelScope.launch {
-            val result = repairJobRepository.removePartFromJob(jobId, part.partRef.inventoryItemId)
+            val result = if (part.partRef.id > 0L) {
+                repairJobRepository.removeUsageRecord(part.partRef.id)
+            } else {
+                repairJobRepository.removePartFromJob(jobId, part.partRef.inventoryItemId)
+            }
             when (result) {
                 is OperationResult.Success -> {
                     _partPendingRemoval.value = null

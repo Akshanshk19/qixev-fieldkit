@@ -17,7 +17,7 @@ import com.qixev.qfieldkit.data.local.entity.RepairJobEntity
         RepairJobEntity::class,
         JobPartCrossRef::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(FieldKitConverters::class)
@@ -39,7 +39,7 @@ abstract class FieldKitDatabase : RoomDatabase() {
                     FieldKitDatabase::class.java,
                     DATABASE_NAME
                 )
-                    .addMigrations(MIGRATION_2_3)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
                     .build().also { INSTANCE = it }
             }
         }

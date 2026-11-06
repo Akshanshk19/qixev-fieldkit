@@ -95,6 +95,14 @@
     <string name="select_part_label">Select Inventory Part</string>
     <string name="quantity_to_use_label">Quantity to Use</string>
     <string name="available_stock_hint">Available stock: %1$d</string>
+    <string name="usage_location_label">Location / Where used (optional)</string>
+    <string name="usage_purpose_label">Purpose / What used for (optional)</string>
+    <string name="used_at_format">Used: %1$s</string>
+    <string name="location_format">Location: %1$s</string>
+    <string name="purpose_format">Purpose: %1$s</string>
+    <string name="work_unit_title_label">Title / Job Name *</string>
+    <string name="work_unit_desc_label">Description</string>
+    <string name="optional_customer_title">Customer Info (Optional)</string>
     <string name="remove_part_title">Remove Part</string>
     <string name="remove_part_confirmation">Remove %1$s (%2$d units) from this job? These units will be restored to inventory stock.</string>
     <string name="cancel_job_title">Cancel Repair Job</string>

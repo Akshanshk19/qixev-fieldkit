@@ -34,7 +34,7 @@ class JobDetailNotFoundTest {
                     onTransitionStatus = {},
                     onOpenAddPartDialog = {},
                     onDismissAddPartDialog = {},
-                    onAddPart = { _, _ -> },
+                    onAddPart = { _, _, _, _ -> },
                     onRequestRemovePart = {},
                     onDismissRemovePart = {},
                     onConfirmRemovePart = {},
