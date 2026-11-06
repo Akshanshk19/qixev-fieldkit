@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.qixev.qfieldkit.data.backup.BackupRepository
+import com.qixev.qfieldkit.data.preferences.OnboardingPreferences
 import com.qixev.qfieldkit.data.repository.InventoryRepository
 import com.qixev.qfieldkit.data.repository.RepairJobRepository
 import com.qixev.qfieldkit.ui.inventory.InventoryScreen
@@ -20,6 +21,7 @@ import com.qixev.qfieldkit.ui.jobs.JobDetailScreen
 import com.qixev.qfieldkit.ui.jobs.JobDetailViewModel
 import com.qixev.qfieldkit.ui.jobs.RepairJobListScreen
 import com.qixev.qfieldkit.ui.jobs.RepairJobListViewModel
+import com.qixev.qfieldkit.ui.onboarding.OnboardingScreen
 import com.qixev.qfieldkit.ui.settings.SettingsScreen
 import com.qixev.qfieldkit.ui.settings.SettingsViewModel
 
@@ -29,10 +31,16 @@ fun FieldKitNavHost(
     inventoryRepository: InventoryRepository,
     repairJobRepository: RepairJobRepository,
     backupRepository: BackupRepository,
+    onboardingPreferences: OnboardingPreferences,
     inventoryViewModel: InventoryViewModel,
     repairJobListViewModel: RepairJobListViewModel,
     settingsViewModel: SettingsViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    startDestination: String = if (onboardingPreferences.hasCompletedOnboarding()) {
+        Screen.RepairJobs.route
+    } else {
+        Screen.Onboarding.route
+    }
 ) {
     // Listen for create job navigation event to navigate to detail screen
     LaunchedEffect(Unit) {
@@ -43,9 +51,31 @@ fun FieldKitNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = Screen.RepairJobs.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
+        composable(route = Screen.Onboarding.route) {
+            OnboardingScreen(
+                onCreateFirstJob = {
+                    onboardingPreferences.setCompletedOnboarding(true)
+                    repairJobListViewModel.onOpenCreateDialog()
+                    navController.navigate(Screen.RepairJobs.route) {
+                        popUpTo(Screen.Onboarding.route) {
+                            inclusive = true
+                        }
+                    }
+                },
+                onCompleteAndGoToJobs = {
+                    onboardingPreferences.setCompletedOnboarding(true)
+                    navController.navigate(Screen.RepairJobs.route) {
+                        popUpTo(Screen.Onboarding.route) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
+        }
+
         composable(route = Screen.RepairJobs.route) {
             val uiState by repairJobListViewModel.uiState.collectAsStateWithLifecycle()
             RepairJobListScreen(

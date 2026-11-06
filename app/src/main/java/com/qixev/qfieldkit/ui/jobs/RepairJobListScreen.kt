@@ -543,7 +543,7 @@ private fun EmptyJobsView(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.new_job))
+                Text(stringResource(R.string.create_repair_job))
             }
         }
     }
@@ -655,7 +655,7 @@ private fun CreateJobDialog(
                 },
                 shape = RoundedCornerShape(20.dp)
             ) {
-                Text(stringResource(R.string.save))
+                Text(stringResource(R.string.create_job_confirm))
             }
         },
         dismissButton = {

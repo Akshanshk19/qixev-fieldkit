@@ -383,7 +383,7 @@ private fun EmptyInventoryView(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.add_item))
+                Text(stringResource(R.string.add_inventory_item))
             }
         }
     }

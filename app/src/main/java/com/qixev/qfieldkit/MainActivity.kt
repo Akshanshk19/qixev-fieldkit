@@ -154,6 +154,7 @@ class MainActivity : ComponentActivity() {
                         inventoryRepository = app.inventoryRepository,
                         repairJobRepository = app.repairJobRepository,
                         backupRepository = app.backupRepository,
+                        onboardingPreferences = app.onboardingPreferences,
                         inventoryViewModel = inventoryViewModel,
                         repairJobListViewModel = repairJobListViewModel,
                         settingsViewModel = settingsViewModel,

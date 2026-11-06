@@ -1,6 +1,7 @@
 package com.qixev.qfieldkit.ui.navigation
 
 sealed class Screen(val route: String) {
+    data object Onboarding : Screen("onboarding")
     data object RepairJobs : Screen("jobs")
     data object JobDetail : Screen("jobs/{jobId}") {
         fun createRoute(jobId: Long) = "jobs/$jobId"
