@@ -166,8 +166,8 @@ $content = @"
 - Staged changes: $($gitState.StagedCount) files ($stagedList)
 - Tracked unstaged changes: $($gitState.TrackedCount) files ($trackedList)
 - Untracked files: $($gitState.UntrackedCount) files ($untrackedList)
-- Primary device: Redmi 7 (df1de4f9, Android 16, SDK 36)
-- Secondary device: Motorola moto g(40) fusion (ZD2223VMC2, Android 12, SDK 31)
+- Primary device: Redmi 7 (Android 16, SDK 36)
+- Secondary device: Motorola moto g(40) fusion (Android 12, SDK 31)
 - Developer/agent: Antigravity / User
 
 ## Objective
@@ -188,7 +188,7 @@ $changedFiles
 ### Instrumentation tests
 - Result: $connectedResult
 - Count: $connectedCount
-- Device: Redmi 7 (df1de4f9, Android 16)
+- Device: Redmi 7 (Android 16)
 
 ### Build
 - Debug: PASS

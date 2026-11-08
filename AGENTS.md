@@ -36,14 +36,15 @@ Welcome to **Qixev FieldKit**. This document governs all autonomous and pair-pro
 
 ## 4. Hardware Verification Protocol
 
-### Primary Development & Test Device
-- **Device**: **Redmi 7** (Codename: `onclite`, Serial: `df1de4f9`)
+### Primary Reference Development & Test Device
+- **Device**: **Redmi 7** (Codename: `onclite`, Lab Reference Serial: `df1de4f9`)
 - **OS / Runtime**: **Android 16** (SDK 36, LineageOS)
-- **Role**: Primary development and continuous automated instrumentation device.
+- **Role**: Primary development and continuous automated instrumentation reference device.
 - **Permissions**: This dedicated test device may be used freely by agents to clear app data (`pm clear com.qixev.qfieldkit`), install debug builds, run connected tests, inspect process states, and collect logcat. Do not touch unrelated apps or system files.
+- **Device Portability**: Testing scripts also support any attached Android physical device or emulator running Android 8.0+ (API 26+) by passing `-Serial <serial>` or attaching a single device.
 
 ### Secondary Regression Device
-- **Device**: **Motorola moto g(40) fusion** (Serial: `ZD2223VMC2`)
+- **Device**: **Motorola moto g(40) fusion** (Lab Reference Serial: `ZD2223VMC2`)
 - **OS / Runtime**: **Android 12** (SDK 31)
 - **Role**: Secondary regression target for dynamic theming, Material You wallpaper extraction, and legacy Android 12 lifecycle verification.
 

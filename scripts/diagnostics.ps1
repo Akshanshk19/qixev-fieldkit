@@ -6,7 +6,8 @@
 
 [CmdletBinding()]
 param(
-    [string]$TargetSerial = "df1de4f9",
+    [Alias("TargetSerial")]
+    [string]$Serial = "",
     [string]$PackageName = "com.qixev.qfieldkit"
 )
 
@@ -24,6 +25,36 @@ if (-not $adb) {
         exit 1
     }
 }
+
+# 1b. Resolve target device
+$rawDevices = & $adb devices -l
+$deviceList = @()
+foreach ($devLine in ($rawDevices -split "`r?`n")) {
+    if ($devLine -match "^\s*([^\s]+)\s+device\b") {
+        $deviceList += $matches[1]
+    }
+}
+
+if ($deviceList.Count -eq 0) {
+    Write-Error "No authorized ADB devices detected. Please attach an Android device and enable USB debugging."
+    exit 1
+}
+
+$resolvedSerial = $null
+if (-not [string]::IsNullOrWhiteSpace($Serial)) {
+    if ($deviceList -contains $Serial) {
+        $resolvedSerial = $Serial
+    } else {
+        Write-Error "Specified device '$Serial' is not connected or not authorized. Available devices: $($deviceList -join ', ')"
+        exit 1
+    }
+} elseif ($deviceList.Count -eq 1) {
+    $resolvedSerial = $deviceList[0]
+} else {
+    Write-Error "Multiple ADB devices detected ($($deviceList -join ', ')). Please specify a target device using -Serial <serial>."
+    exit 1
+}
+$TargetSerial = $resolvedSerial
 
 # 2. Prepare output directory
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")

@@ -6,7 +6,8 @@
 
 [CmdletBinding()]
 param(
-    [string]$ExpectedSerial = "df1de4f9",
+    [Alias("ExpectedSerial")]
+    [string]$Serial = "",
     [switch]$RequireCleanGit
 )
 
@@ -79,28 +80,45 @@ $buildPassed = Invoke-Step "4. Debug APK Assembly" {
     if ($LASTEXITCODE -ne 0) { throw "assembleDebug failed with exit code $LASTEXITCODE" }
 }
 
-# 5. Detect Redmi 7
-$devicePassed = Invoke-Step "5. Detect Redmi 7 Device" {
-    & "$PSScriptRoot\device.ps1" -ExpectedSerial $ExpectedSerial
+# 5. Detect Target Device
+$devicePassed = Invoke-Step "5. Detect Target Android Device" {
+    & "$PSScriptRoot\device.ps1" -Serial $Serial
     if ($LASTEXITCODE -ne 0) { throw "Device detection failed." }
 }
 
 # 6. Install Debug APK
 $installPassed = Invoke-Step "6. Install Debug APK on Device" {
-    & "$PSScriptRoot\install.ps1" -ExpectedSerial $ExpectedSerial
+    & "$PSScriptRoot\install.ps1" -Serial $Serial
     if ($LASTEXITCODE -ne 0) { throw "Installation failed." }
 }
 
 # 7. Connected Instrumentation Tests
 $connectedPassed = Invoke-Step "7. Connected Instrumentation Tests" {
-    $env:ANDROID_SERIAL = $ExpectedSerial
-    # Ensure test device is awake and unlocked (prevention for doze/daydream failure)
-    & adb -s $ExpectedSerial shell input keyevent KEYCODE_WAKEUP 2>$null
-    & adb -s $ExpectedSerial shell wm dismiss-keyguard 2>$null
+    $targetSerial = $Serial
+    if ([string]::IsNullOrWhiteSpace($targetSerial)) {
+        $rawDev = & adb devices | Where-Object { $_ -match "^\s*([^\s]+)\s+device\b" }
+        $devs = @($rawDev | ForEach-Object { if ($_ -match "^\s*([^\s]+)\s+device\b") { $matches[1] } })
+        if ($devs.Count -eq 0) {
+            throw "No authorized ADB devices detected. Please attach an Android device and enable USB debugging."
+        } elseif ($devs.Count -eq 1) {
+            $targetSerial = $devs[0]
+        } else {
+            throw "Multiple ADB devices detected ($($devs -join ', ')). Please specify a target device using -Serial <serial>."
+        }
+    } else {
+        $rawDev = & adb devices | Where-Object { $_ -match "^\s*([^\s]+)\s+device\b" }
+        $devs = @($rawDev | ForEach-Object { if ($_ -match "^\s*([^\s]+)\s+device\b") { $matches[1] } })
+        if (-not ($devs -contains $targetSerial)) {
+            throw "Specified device '$targetSerial' is not connected or not authorized. Available devices: $($devs -join ', ')"
+        }
+    }
+    $env:ANDROID_SERIAL = $targetSerial
+    & adb -s $targetSerial shell input keyevent KEYCODE_WAKEUP 2>$null
+    & adb -s $targetSerial shell wm dismiss-keyguard 2>$null
     & .\gradlew.bat connectedDebugAndroidTest
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Collecting crash diagnostics due to test failure..." -ForegroundColor Red
-        & "$PSScriptRoot\diagnostics.ps1" -TargetSerial $ExpectedSerial
+        & "$PSScriptRoot\diagnostics.ps1" -Serial $targetSerial
         throw "connectedDebugAndroidTest failed with exit code $LASTEXITCODE"
     }
 }

@@ -1,11 +1,12 @@
 <#
 .SYNOPSIS
-    Installs the debug APK onto the dedicated Redmi 7 development device.
+    Installs the debug APK onto a target Android development device.
 #>
 
 [CmdletBinding()]
 param(
-    [string]$ExpectedSerial = "df1de4f9",
+    [Alias("ExpectedSerial")]
+    [string]$Serial = "",
     [string]$ApkPath = "app\build\outputs\apk\debug\app-debug.apk",
     [switch]$BuildIfMissing
 )
@@ -25,23 +26,32 @@ if (-not $adb) {
     }
 }
 
-# 2. Verify target device is Redmi 7
+# 2. Resolve target device
 $rawDevices = & $adb devices -l
-$isRedmiConnected = $false
+$deviceList = @()
 foreach ($line in ($rawDevices -split "`r?`n")) {
     if ($line -match "^\s*([^\s]+)\s+device\b") {
-        $serial = $matches[1]
-        $model = (& $adb -s $serial shell getprop ro.product.model 2>$null).Trim()
-        if ($serial -eq $ExpectedSerial -or $model -match "Redmi") {
-            $isRedmiConnected = $true
-            $targetSerial = $serial
-            break
-        }
+        $deviceList += $matches[1]
     }
 }
 
-if (-not $isRedmiConnected) {
-    Write-Error "Safety restriction: Target device must be Redmi 7 ($ExpectedSerial). Refusing to install on unknown device."
+if ($deviceList.Count -eq 0) {
+    Write-Error "No authorized ADB devices detected. Please attach an Android device and enable USB debugging."
+    exit 1
+}
+
+$targetSerial = $null
+if (-not [string]::IsNullOrWhiteSpace($Serial)) {
+    if ($deviceList -contains $Serial) {
+        $targetSerial = $Serial
+    } else {
+        Write-Error "Specified device '$Serial' is not connected or not authorized. Available devices: $($deviceList -join ', ')"
+        exit 1
+    }
+} elseif ($deviceList.Count -eq 1) {
+    $targetSerial = $deviceList[0]
+} else {
+    Write-Error "Multiple ADB devices detected ($($deviceList -join ', ')). Please specify a target device using -Serial <serial>."
     exit 1
 }
 
@@ -61,14 +71,16 @@ if (-not (Test-Path $resolvedApk)) {
     }
 }
 
-Write-Host "Installing $(Split-Path $resolvedApk -Leaf) to Redmi 7 ($targetSerial)..." -ForegroundColor Cyan
+# 4. Install APK
+$model = (& $adb -s $targetSerial shell getprop ro.product.model 2>$null).Trim()
+Write-Host "Installing $(Split-Path $resolvedApk -Leaf) to device $targetSerial ($model)..." -ForegroundColor Cyan
 $installOutput = & $adb -s $targetSerial install -r -d $resolvedApk 2>&1
 Write-Host $installOutput
 
 if ($installOutput -match "Success") {
-    Write-Host "Installation SUCCESSFUL on Redmi 7 ($targetSerial)." -ForegroundColor Green
+    Write-Host "Installation SUCCESSFUL on device $targetSerial ($model)." -ForegroundColor Green
     exit 0
 } else {
-    Write-Error "Installation FAILED: $installOutput"
+    Write-Error "Installation failed on device $targetSerial."
     exit 1
 }

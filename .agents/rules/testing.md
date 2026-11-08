@@ -24,16 +24,17 @@ The codebase maintains three levels of automated testing:
 
 ---
 
-## 3. Mandatory Hardware Testing Targets
+## 3. Reference Hardware Testing Targets
 
-### Primary Device: Redmi 7 (`df1de4f9`)
+### Primary Reference Device: Redmi 7 (`df1de4f9`)
 - **OS**: Android 16 (API 36, LineageOS)
-- **Role**: Primary execution environment for all `connectedDebugAndroidTest` runs.
-- **Verification Rule**: Any feature or bug fix modifying database logic, navigation, or Compose UI must be verified on this device before completion.
+- **Role**: Primary execution reference for continuous `connectedDebugAndroidTest` runs in the development lab.
+- **Verification Rule**: Any feature or bug fix modifying database logic, navigation, or Compose UI must be verified on a connected test target before completion.
+- **Portability**: Automated scripts (`qa.ps1`, `install.ps1`, `device.ps1`) support any attached Android device or emulator running Android 8.0+ (API 26+) via `-Serial <serial>` or single attached device auto-detection.
 
-### Secondary Device: Motorola moto g(40) fusion (`ZD2223VMC2`)
+### Secondary Reference Device: Motorola moto g(40) fusion (`ZD2223VMC2`)
 - **OS**: Android 12 (API 31)
-- **Role**: Regression testing for Material You wallpaper theming and Android 12 background process lifecycle.
+- **Role**: Secondary regression testing for Material You wallpaper theming and Android 12 background process lifecycle.
 
 ---
 

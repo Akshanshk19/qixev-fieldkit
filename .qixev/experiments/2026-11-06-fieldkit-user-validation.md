@@ -112,10 +112,10 @@ Record empirical evidence if participating technicians:
 
 ## 8. Measurement & Supporting Documents
 
-- **Observation Protocol**: [`.qixev/experiments/OBSERVATION_PROTOCOL.md`](file:///F:/Qixev/Q_FieldKit/.qixev/experiments/OBSERVATION_PROTOCOL.md)
-- **Interview Script**: [`.qixev/experiments/USER_INTERVIEW.md`](file:///F:/Qixev/Q_FieldKit/.qixev/experiments/USER_INTERVIEW.md)
-- **Session Evidence Template**: [`.qixev/experiments/USER_SESSION_TEMPLATE.md`](file:///F:/Qixev/Q_FieldKit/.qixev/experiments/USER_SESSION_TEMPLATE.md)
-- **Aggregated Results Template**: [`.qixev/experiments/RESULTS_TEMPLATE.md`](file:///F:/Qixev/Q_FieldKit/.qixev/experiments/RESULTS_TEMPLATE.md)
+- **Observation Protocol**: [`OBSERVATION_PROTOCOL.md`](OBSERVATION_PROTOCOL.md)
+- **Interview Script**: [`USER_INTERVIEW.md`](USER_INTERVIEW.md)
+- **Session Evidence Template**: [`USER_SESSION_TEMPLATE.md`](USER_SESSION_TEMPLATE.md)
+- **Aggregated Results Template**: [`RESULTS_TEMPLATE.md`](RESULTS_TEMPLATE.md)
 
 ---
 

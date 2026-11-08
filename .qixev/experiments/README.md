@@ -34,14 +34,15 @@ Example: `2026-11-06-onboarding-experiment.md`
 
 ## Experiment Framework Documents
 
-- [`EXPERIMENT_TEMPLATE.md`](file:///F:/Qixev/Q_FieldKit/.qixev/experiments/EXPERIMENT_TEMPLATE.md): Standard hypothesis-driven technical experiment template.
-- [`USER_SESSION_TEMPLATE.md`](file:///F:/Qixev/Q_FieldKit/.qixev/experiments/USER_SESSION_TEMPLATE.md): Standard technician observation and interview record.
-- [`OBSERVATION_PROTOCOL.md`](file:///F:/Qixev/Q_FieldKit/.qixev/experiments/OBSERVATION_PROTOCOL.md): Non-leading, silent-observation field protocol.
-- [`USER_INTERVIEW.md`](file:///F:/Qixev/Q_FieldKit/.qixev/experiments/USER_INTERVIEW.md): Structured multi-part interview script for workflow, pain points, and pricing.
-- [`RESULTS_TEMPLATE.md`](file:///F:/Qixev/Q_FieldKit/.qixev/experiments/RESULTS_TEMPLATE.md): Multi-session aggregation and epistemic synthesis template.
+- [`EXPERIMENT_TEMPLATE.md`](EXPERIMENT_TEMPLATE.md): Standard hypothesis-driven technical experiment template.
+- [`USER_SESSION_TEMPLATE.md`](USER_SESSION_TEMPLATE.md): Standard technician observation and interview record.
+- [`OBSERVATION_PROTOCOL.md`](OBSERVATION_PROTOCOL.md): Non-leading, silent-observation field protocol.
+- [`USER_INTERVIEW.md`](USER_INTERVIEW.md): Structured multi-part interview script for workflow, pain points, and pricing.
+- [`RESULTS_TEMPLATE.md`](RESULTS_TEMPLATE.md): Multi-session aggregation and epistemic synthesis template.
 
 ---
 
 ## Active Experiments
 
-- [`2026-11-06-fieldkit-user-validation.md`](file:///F:/Qixev/Q_FieldKit/.qixev/experiments/2026-11-06-fieldkit-user-validation.md): **Experiment #001 ? FieldKit Real-World User Validation** (Targeting 5?10 practicing repair technicians).
+- [`2026-11-06-fieldkit-user-validation.md`](2026-11-06-fieldkit-user-validation.md): **Experiment #001 — FieldKit Real-World User Validation** (Targeting 5–10 practicing repair technicians).
+- [`2026-11-07-generic-work-unit-inventory-pivot.md`](2026-11-07-generic-work-unit-inventory-pivot.md): **Experiment #002 — Generic Work Units and Discrete Inventory Usage**.

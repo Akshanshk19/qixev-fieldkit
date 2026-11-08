@@ -51,8 +51,8 @@ if ($trackedSecrets) {
 Write-Host "Signing properties exist and are properly untracked." -ForegroundColor Green
 
 # 3. Assemble Release APK
-Write-Host "`n3. Compiling Release APK with R8 Minification..." -ForegroundColor Yellow
-& .\gradlew.bat assembleRelease
+Write-Host "`n3. Compiling Release APK with R8 Minification (production signing required)..." -ForegroundColor Yellow
+& .\gradlew.bat assembleRelease -PrequireReleaseSigning=true
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Release compilation failed."
     exit 1

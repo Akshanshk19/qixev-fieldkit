@@ -8,6 +8,7 @@ plugins {
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val hasReleaseSigning = keystorePropertiesFile.exists()
+val requireReleaseSigning = project.findProperty("requireReleaseSigning") == "true"
 
 android {
     namespace = "com.qixev.qfieldkit"
@@ -95,17 +96,12 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
 
-tasks.matching { it.name == "packageRelease" || it.name == "validateSigningRelease" }.configureEach {
-    if (!hasReleaseSigning) {
+if (requireReleaseSigning && !hasReleaseSigning) {
+    tasks.matching { it.name == "packageRelease" || it.name == "validateSigningRelease" }.configureEach {
         doFirst {
             throw GradleException(
-                "Production release signing is not configured. Missing 'keystore.properties' in root project.\n" +
-                "To build a signed release APK, create 'keystore.properties' containing:\n" +
-                "  storeFile=<path/to/keystore.jks>\n" +
-                "  storePassword=<password>\n" +
-                "  keyAlias=<alias>\n" +
-                "  keyPassword=<password>\n" +
-                "Per security policy, production release builds will NOT fall back to debug signing."
+                "Production release signing is required (-PrequireReleaseSigning=true), but 'keystore.properties' is missing.\n" +
+                "Cannot assemble production release build without valid release signing credentials."
             )
         }
     }

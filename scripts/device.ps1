@@ -1,12 +1,13 @@
 <#
 .SYNOPSIS
-    Inspects ADB connectivity, identifies the primary development device (Redmi 7),
+    Inspects ADB connectivity, identifies target Android device,
     and reports system & package status.
 #>
 
 [CmdletBinding()]
 param(
-    [string]$ExpectedSerial = "df1de4f9"
+    [Alias("ExpectedSerial")]
+    [string]$Serial = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -30,27 +31,31 @@ Write-Host "Using ADB: $adb" -ForegroundColor Cyan
 $rawDevices = & $adb devices -l
 Write-Host "`nConnected Devices:`n$rawDevices"
 
-$deviceLines = $rawDevices -split "`r?`n" | Where-Object { $_ -match "^\s*([^\s]+)\s+device\b" }
-if (-not $deviceLines) {
-    Write-Error "No authorized ADB devices detected. Please attach the Redmi 7 and enable USB debugging."
-    exit 1
-}
-
-# 3. Match Redmi 7
-$foundDevice = $null
-foreach ($line in $deviceLines) {
+$deviceList = @()
+foreach ($line in ($rawDevices -split "`r?`n")) {
     if ($line -match "^\s*([^\s]+)\s+device\b") {
-        $serial = $matches[1]
-        $model = (& $adb -s $serial shell getprop ro.product.model 2>$null).Trim()
-        if ($serial -eq $ExpectedSerial -or $model -match "Redmi") {
-            $foundDevice = $serial
-            break
-        }
+        $deviceList += $matches[1]
     }
 }
 
-if (-not $foundDevice) {
-    Write-Error "Primary development device (Redmi 7, serial: $ExpectedSerial) not found among connected devices."
+if ($deviceList.Count -eq 0) {
+    Write-Error "No authorized ADB devices detected. Please attach an Android device and enable USB debugging."
+    exit 1
+}
+
+# 3. Resolve target device
+$foundDevice = $null
+if (-not [string]::IsNullOrWhiteSpace($Serial)) {
+    if ($deviceList -contains $Serial) {
+        $foundDevice = $Serial
+    } else {
+        Write-Error "Specified device '$Serial' is not connected or not authorized. Available devices: $($deviceList -join ', ')"
+        exit 1
+    }
+} elseif ($deviceList.Count -eq 1) {
+    $foundDevice = $deviceList[0]
+} else {
+    Write-Error "Multiple ADB devices detected ($($deviceList -join ', ')). Please specify a target device using -Serial <serial>."
     exit 1
 }
 
