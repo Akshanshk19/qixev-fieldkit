@@ -1,6 +1,10 @@
 package com.qixev.qfieldkit.ui.settings
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -22,11 +26,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -67,9 +73,11 @@ fun SettingsScreen(
     onConfirmRestore: () -> Unit,
     onDismissRestoreConfirmDialog: () -> Unit,
     onClearUserMessage: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSupportQixev: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
+    val handleSupportClick = onSupportQixev ?: { openSupportUrl(context) }
 
     val exportBackupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -257,6 +265,29 @@ fun SettingsScreen(
                 }
             }
 
+            // Community & Project Support Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                ),
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    SettingsActionRow(
+                        icon = Icons.Outlined.FavoriteBorder,
+                        title = stringResource(R.string.support_qixev_title),
+                        description = stringResource(R.string.support_qixev_desc),
+                        trailingIcon = Icons.AutoMirrored.Outlined.OpenInNew,
+                        onClick = handleSupportClick
+                    )
+                }
+            }
+
             // About & Identity Section
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -375,7 +406,8 @@ private fun SettingsActionRow(
     icon: ImageVector,
     title: String,
     description: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    trailingIcon: ImageVector? = null
 ) {
     Row(
         modifier = Modifier
@@ -405,5 +437,30 @@ private fun SettingsActionRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        if (trailingIcon != null) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = trailingIcon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+private fun openSupportUrl(context: Context) {
+    try {
+        val url = context.getString(R.string.support_qixev_url)
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    } catch (_: ActivityNotFoundException) {
+        Toast.makeText(
+            context,
+            context.getString(R.string.no_browser_found),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 }
