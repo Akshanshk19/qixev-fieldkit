@@ -140,6 +140,6 @@
     <string name="support_section_subtitle">Help sustain independent, offline-first open-source engineering.</string>
     <string name="support_qixev_title">Support Qixev</string>
     <string name="support_qixev_desc">Help fund continued development of Qixev\'s open-source software and engineering tools.</string>
-    <string name="support_qixev_url">https://qixev.com/support</string>
+    <string name="support_qixev_url">https://qixev.studio/support.html</string>
     <string name="no_browser_found">No web browser found to open link.</string>
 </resources>

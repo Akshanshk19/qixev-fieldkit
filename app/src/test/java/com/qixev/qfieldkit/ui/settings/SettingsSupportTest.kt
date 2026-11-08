@@ -9,15 +9,15 @@ import java.net.URI
 class SettingsSupportTest {
 
     companion object {
-        const val EXPECTED_SUPPORT_URL = "https://qixev.com/support"
+        const val EXPECTED_SUPPORT_URL = "https://qixev.studio/support.html"
     }
 
     @Test
     fun supportUrl_isStrictHttps() {
         val uri = URI.create(EXPECTED_SUPPORT_URL)
         assertEquals("https", uri.scheme)
-        assertEquals("qixev.com", uri.host)
-        assertEquals("/support", uri.path)
+        assertEquals("qixev.studio", uri.host)
+        assertEquals("/support.html", uri.path)
     }
 
     @Test
