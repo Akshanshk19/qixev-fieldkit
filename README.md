@@ -29,15 +29,8 @@
 ## Project Status
 
 - **Version**: `1.0.0` (`versionCode: 100`)
-- **Stage**: Release Candidate (`v1.0.0-rc1`)
-- **Target Platform**: Android 8.0 (API level 26) through Android 16 (API level 37)
-
----
-
-## Screenshots
-
-<!-- Screenshots will be added here prior to public distribution -->
-*(Screenshots placeholder)*
+- **Stage**: General Availability / Stable (`v1.0.0`)
+- **Target Platform**: Android 8.0 (API level 26) through Android 16 (API level 36) (Target SDK: 37)
 
 ---
 
@@ -57,7 +50,7 @@
 
 ### Clone & Compile Debug Build
 ```bash
-git clone <repository-url>
+git clone https://github.com/Akshanshk19/qixev-fieldkit.git
 cd Q_FieldKit
 
 # Build debug APK

@@ -69,8 +69,6 @@
     <string name="job_number">Job #%1$d</string>
     <string name="customer_name_label">Customer Name *</string>
     <string name="customer_phone_label">Phone Number *</string>
-    <string name="device_name_label">Device / Model *</string>
-    <string name="problem_description_label">Reported Problem *</string>
     <string name="estimated_cost_label">Estimated Cost ($)</string>
     <string name="created_label">Created: %1$s</string>
     <string name="updated_label">Updated: %1$s</string>
@@ -87,7 +85,6 @@
     <string name="repair_job_not_found_desc">The requested repair job ticket does not exist or has been removed.</string>
     <string name="back_to_jobs">Back to Jobs</string>
     <string name="customer_info_title">Customer &amp; Device</string>
-    <string name="problem_title">Problem Description</string>
     <string name="parts_used_title">Parts Used</string>
     <string name="add_part">Add Part</string>
     <string name="no_parts_allocated">No parts used on this repair yet.</string>
@@ -130,14 +127,11 @@
     <string name="restore_confirm_button">Restore &amp; Overwrite</string>
 
     <!-- About & App Identity -->
-    <string name="about_section">About</string>
     <string name="about_tagline">Offline Workshop &amp; Field Inventory</string>
     <string name="app_version_format">Version %1$s (%2$d)</string>
     <string name="copyright_notice">© 2026 Qixev. Released under GNU GPL v3 or later.</string>
 
     <!-- Support & Community -->
-    <string name="support_section_title">Support &amp; Community</string>
-    <string name="support_section_subtitle">Help sustain independent, offline-first open-source engineering.</string>
     <string name="support_qixev_title">Support Qixev</string>
     <string name="support_qixev_desc">Help fund continued development of Qixev\'s open-source software and engineering tools.</string>
     <string name="support_qixev_url">https://qixev.studio/support.html</string>
